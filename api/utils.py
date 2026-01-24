@@ -40,6 +40,9 @@ def handle_akshare_error(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except ApiError:
+            # ApiError 应该由 Flask 的错误处理器处理
+            raise
         except ValueError as e:
             raise ApiError(f"数据格式错误: {str(e)}", 400)
         except ConnectionError as e:
