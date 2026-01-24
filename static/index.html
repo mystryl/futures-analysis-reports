@@ -3,104 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>期货回测系统</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .info {
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        .api-list {
-            margin-top: 30px;
-        }
-        .api-item {
-            background-color: #f9f9f9;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 4px;
-            border-left: 3px solid #4caf50;
-        }
-        .api-item h3 {
-            margin-top: 0;
-            color: #2196f3;
-        }
-        .api-item code {
-            background-color: #fff;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-    </style>
+    <title>期货 K 线图表</title>
+    <link rel="stylesheet" href="css/chart.css">
 </head>
 <body>
-    <div class="container">
-        <h1>期货回测系统 API</h1>
-
-        <div class="info">
-            <h2>欢迎使用期货回测系统</h2>
-            <p>这是一个基于 Flask 的期货回测系统，提供丰富的数据分析和可视化功能。</p>
-        </div>
-
-        <div class="api-list">
-            <h2>可用的 API 端点</h2>
-
-            <div class="api-item">
-                <h3>品种搜索 API</h3>
-                <p><strong>端点:</strong> <code>/api/symbols</code></p>
-                <p><strong>方法:</strong> GET</p>
-                <p><strong>参数:</strong> <code>q</code> (可选) - 搜索关键词</p>
-                <p><strong>示例:</strong></p>
-                <ul>
-                    <li><code>/api/symbols</code> - 获取所有品种</li>
-                    <li><code>/api/symbols?q=rb</code> - 搜索螺纹钢相关品种</li>
-                </ul>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <h1>期货分析图表</h1>
+                <span class="version">klinecharts pro</span>
             </div>
-
-            <div class="api-item">
-                <h3>历史数据 API</h3>
-                <p><strong>端点:</strong> <code>/api/history</code></p>
-                <p><strong>方法:</strong> GET</p>
-                <p><strong>参数:</strong></p>
-                <ul>
-                    <li><code>symbol</code> - 期货品种代码（必需）</li>
-                    <li><code>period</code> - 周期（可选，默认为 daily）</li>
-                    <li><code>start_date</code> - 开始日期（可选）</li>
-                    <li><code>end_date</code> - 结束日期（可选）</li>
-                </ul>
+            <div class="header-right">
+                <div class="status-indicator" id="status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">连接中...</span>
+                </div>
             </div>
+        </header>
 
-            <div class="api-item">
-                <h3>回测 API</h3>
-                <p><strong>端点:</strong> <code>/api/backtest</code></p>
-                <p><strong>方法:</strong> POST</p>
-                <p><strong>参数:</strong> 策略配置参数</p>
-            </div>
-        </div>
+        <div id="chart-error" class="error-banner" style="display: none;"></div>
 
-        <div style="margin-top: 40px; text-align: center; color: #666;">
-            <p>期货回测系统 v1.0</p>
-            <p>使用前请仔细阅读文档和风险提示</p>
+        <main class="chart-container">
+            <div id="chart"></div>
+        </main>
+
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>正在加载数据...</p>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/klinecharts@9.8.8/dist/klinecharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@klinecharts/pro@9.8.8/dist/klinecharts-pro.umd.js"></script>
+    <script src="js/chart.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
