@@ -403,6 +403,13 @@ class ChartDataGenerator:
                 chart.createIndicator('VOL', false, {{ height: 80 }});
                 chart.createIndicator('MACD', false, {{ height: 80 }});
 
+                // klinecharts 10.x: 设置数据加载器
+                chart.setDataLoader({{
+                    getBars: function(params) {{
+                        return periodData[currentPeriod];
+                    }}
+                }});
+
                 loadPeriodData('day');
                 console.log('✅ K线图表加载成功 (klinecharts 10.0)');
             }} catch (error) {{
@@ -419,7 +426,11 @@ class ChartDataGenerator:
                 return;
             }}
 
-            chart.applyNewData(data);
+            currentPeriod = period;  // 更新当前周期
+
+            // klinecharts 10.x: 使用 resetData 触发数据重新加载
+            chart.resetData();
+
             document.getElementById('data-count').textContent = data.length;
             document.getElementById('current-period').textContent = getPeriodName(period);
 
