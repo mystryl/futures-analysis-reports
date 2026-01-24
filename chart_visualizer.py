@@ -1249,21 +1249,67 @@ class ChartDataGenerator:
         function toggleIndicator(indicatorName) {{
             if (!chart) return;
 
-            const btn = document.querySelector(`.indicator-toggle[data-indicator="{{indicatorName}}"]`);
+            const btn = document.querySelector(`.indicator-toggle[data-indicator="${{indicatorName}}"]`);
 
             if (indicatorStates[indicatorName]) {{
-                // 隐藏指标 - klinecharts 9.8: 使用实例而非名称
+                // 隐藏指标
                 if (indicators[indicatorName]) {{
-                    chart.removeIndicator(indicators[indicatorName]);
+                    try {{
+                        chart.removeIndicator(indicators[indicatorName]);
+                    }} catch (e) {{
+                        console.warn('移除指标失败:', e);
+                    }}
                     delete indicators[indicatorName];
                 }}
                 indicatorStates[indicatorName] = false;
-                if (btn) btn.classList.remove('active');
             }} else {{
-                // 显示指标
+                // 显示指标 - 先检查是否已存在
+                if (indicators[indicatorName]) {{
+                    console.warn('指标已存在，跳过创建');
+                    return;
+                }}
                 indicators[indicatorName] = chart.createIndicator(indicatorName, false, {{ height: 80 }});
                 indicatorStates[indicatorName] = true;
-                if (btn) btn.classList.add('active');
+            }}
+
+            // 更新按钮状态
+            if (btn) {{
+                if (indicatorStates[indicatorName]) {{
+                    btn.classList.add('active');
+                }} else {{
+                    btn.classList.remove('active');
+                }}
+            }}
+        }}
+
+        // 恢复指标状态（用于切换周期后）
+        function restoreIndicators() {{
+            if (!chart) return;
+
+            // 清除所有已跟踪的指标实例（不包括MA，它始终显示）
+            for (let key in indicators) {{
+                if (indicators[key]) {{
+                    try {{
+                        chart.removeIndicator(indicators[key]);
+                    }} catch (e) {{
+                        console.warn('清除指标失败:', e);
+                    }}
+                }}
+            }}
+            indicators = {{}};
+
+            // MA指标始终显示，重新创建
+            chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+
+            // 根据当前状态重新创建指标
+            if (indicatorStates['VOL']) {{
+                indicators['VOL'] = chart.createIndicator('VOL', false, {{ height: 80 }});
+            }}
+            if (indicatorStates['MACD']) {{
+                indicators['MACD'] = chart.createIndicator('MACD', false, {{ height: 80 }});
+            }}
+            if (indicatorStates['KDJ']) {{
+                indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
             }}
         }}
 
@@ -1281,6 +1327,9 @@ class ChartDataGenerator:
 
             // klinecharts 9.8: 使用 applyNewData 加载新数据
             chart.applyNewData(data);
+
+            // 恢复指标状态
+            restoreIndicators();
 
             document.getElementById('data-count').textContent = data.length;
             document.getElementById('current-period').textContent = getPeriodName(period);
@@ -1302,10 +1351,20 @@ class ChartDataGenerator:
 
         // 更新报告内容
         function updateReport(period) {{
-            // 隐藏所有周期报告，显示当前周期报告
+            // 隐藏所有周期报告，但保持支撑压力位可见
             document.querySelectorAll('.period-report').forEach(el => {{
-                el.style.display = 'none';
+                if (el.id !== 'report-support') {{
+                    el.style.display = 'none';
+                }}
             }});
+
+            // 确保支撑压力位始终可见
+            const supportReport = document.getElementById('report-support');
+            if (supportReport) {{
+                supportReport.style.display = 'block';
+            }}
+
+            // 显示当前周期报告
             const currentReport = document.getElementById('report-' + period);
             if (currentReport) {{
                 currentReport.style.display = 'block';
@@ -1377,6 +1436,14 @@ class ChartDataGenerator:
 
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_template)
+
+        # 复制 klinecharts.min.js 到 output 目录
+        import shutil
+        source_js = os.path.join(os.path.dirname(__file__), 'static', 'lib', 'klinecharts.min.js')
+        target_js = os.path.join(os.path.dirname(output_path), 'klinecharts.min.js')
+        if os.path.exists(source_js):
+            shutil.copy2(source_js, target_js)
+            logger.info(f"JS文件已复制: {target_js}")
 
         logger.info(f"HTML查看器已生成: {output_path}")
 
