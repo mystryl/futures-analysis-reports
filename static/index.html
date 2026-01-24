@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期货回测系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .api-list {
+            margin-top: 30px;
+        }
+        .api-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #4caf50;
+        }
+        .api-item h3 {
+            margin-top: 0;
+            color: #2196f3;
+        }
+        .api-item code {
+            background-color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>期货回测系统 API</h1>
+
+        <div class="info">
+            <h2>欢迎使用期货回测系统</h2>
+            <p>这是一个基于 Flask 的期货回测系统，提供丰富的数据分析和可视化功能。</p>
+        </div>
+
+        <div class="api-list">
+            <h2>可用的 API 端点</h2>
+
+            <div class="api-item">
+                <h3>品种搜索 API</h3>
+                <p><strong>端点:</strong> <code>/api/symbols</code></p>
+                <p><strong>方法:</strong> GET</p>
+                <p><strong>参数:</strong> <code>q</code> (可选) - 搜索关键词</p>
+                <p><strong>示例:</strong></p>
+                <ul>
+                    <li><code>/api/symbols</code> - 获取所有品种</li>
+                    <li><code>/api/symbols?q=rb</code> - 搜索螺纹钢相关品种</li>
+                </ul>
+            </div>
+
+            <div class="api-item">
+                <h3>历史数据 API</h3>
+                <p><strong>端点:</strong> <code>/api/history</code></p>
+                <p><strong>方法:</strong> GET</p>
+                <p><strong>参数:</strong></p>
+                <ul>
+                    <li><code>symbol</code> - 期货品种代码（必需）</li>
+                    <li><code>period</code> - 周期（可选，默认为 daily）</li>
+                    <li><code>start_date</code> - 开始日期（可选）</li>
+                    <li><code>end_date</code> - 结束日期（可选）</li>
+                </ul>
+            </div>
+
+            <div class="api-item">
+                <h3>回测 API</h3>
+                <p><strong>端点:</strong> <code>/api/backtest</code></p>
+                <p><strong>方法:</strong> POST</p>
+                <p><strong>参数:</strong> 策略配置参数</p>
+            </div>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; color: #666;">
+            <p>期货回测系统 v1.0</p>
+            <p>使用前请仔细阅读文档和风险提示</p>
+        </div>
+    </div>
+</body>
+</html>
