@@ -36,5 +36,5 @@ def static_files(path):
 
 
 if __name__ == '__main__':
-    logger.info("启动 Flask 服务器: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    logger.info("启动 Flask 服务器: http://localhost:8080")
+    app.run(debug=True, host='0.0.0.0', port=8080)
