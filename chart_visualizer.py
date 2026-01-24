@@ -3,7 +3,7 @@ K线图可视化数据生成模块
 
 生成与 klinecharts 前端库兼容的数据格式，并创建HTML查看器
 支持多周期切换和报告显示
-使用 klinecharts 10.0 技术栈
+使用 klinecharts 9.8 技术栈
 """
 
 from typing import Dict, List, Optional, Any
@@ -16,48 +16,369 @@ import os
 logger = logging.getLogger(__name__)
 
 
-class ChartDataGenerator:
-    """K线图数据生成器"""
+class ChartConfig:
+    """图表配置常量"""
 
-    def __init__(self):
-        pass
+    # 支持的周期
+    SUPPORTED_PERIODS = ['5min', '15min', '60min', 'day']
 
-    def _convert_timestamp(self, ts) -> int:
-        """将时间戳转换为毫秒级时间戳"""
+    # 周期显示名称映射
+    PERIOD_NAMES = {
+        '5min': '5分钟',
+        '15min': '15分钟',
+        '60min': '60分钟',
+        'day': '日线'
+    }
+
+    # 默认最大数据点数
+    DEFAULT_MAX_POINTS = 500
+
+    # 图表尺寸配置
+    CHART_HEIGHT = 600
+    INDICATOR_HEIGHT = 80
+
+    # 颜色配置（红涨绿跌）
+    UP_COLOR = '#ef5350'
+    DOWN_COLOR = '#26a69a'
+    NO_CHANGE_COLOR = '#888888'
+
+    # 主题色配置
+    DARK_THEME_COLORS = {
+        'background': '#0f0f23',
+        'grid': '#2a2a3e',
+        'text': '#d9d9d9',
+        'border': '#2a2a3e',
+        'hover_bg': '#2a2a3e',
+        'hover_text': '#e94560',
+        'scrollbar_track': '#1a1a2e',
+        'scrollbar_thumb': '#e94560'
+    }
+
+    LIGHT_THEME_COLORS = {
+        'background': '#ffffff',
+        'grid': '#e0e0e0',
+        'text': '#2c3e50',
+        'border': '#d0d0d0',
+        'hover_bg': '#e0e0e0',
+        'hover_text': '#c41e3a',
+        'scrollbar_track': '#f0f0f0',
+        'scrollbar_thumb': '#c41e3a'
+    }
+
+
+class StyleConfig:
+    """样式配置类 - 消除暗色/浅色主题的重复代码"""
+
+    @staticmethod
+    def get_base_candle_styles() -> Dict[str, Any]:
+        """获取基础蜡烛图样式配置"""
+        return {
+            'type': 'candle_solid',
+            'bar': {
+                'upColor': ChartConfig.UP_COLOR,
+                'downColor': ChartConfig.DOWN_COLOR,
+                'noChangeColor': ChartConfig.NO_CHANGE_COLOR,
+                'upBorderColor': ChartConfig.UP_COLOR,
+                'downBorderColor': ChartConfig.DOWN_COLOR,
+                'noChangeBorderColor': ChartConfig.NO_CHANGE_COLOR,
+                'upWickColor': ChartConfig.UP_COLOR,
+                'downWickColor': ChartConfig.DOWN_COLOR,
+                'noChangeWickColor': ChartConfig.NO_CHANGE_COLOR
+            }
+        }
+
+    @staticmethod
+    def get_tooltip_config(text_color: str) -> Dict[str, Any]:
+        """获取 tooltip 配置"""
+        return {
+            'showRule': 'always',
+            'showType': 'standard',
+            'custom': [
+                {'title': '时间', 'value': '{time}'},
+                {'title': '开', 'value': '{open}'},
+                {'title': '高', 'value': '{high}'},
+                {'title': '低', 'value': '{low}'},
+                {'title': '收', 'value': '{close}'},
+                {'title': '成交量', 'value': '{volume}'}
+            ],
+            'text': {
+                'size': 12,
+                'color': text_color
+            }
+        }
+
+    @staticmethod
+    def get_price_mark_config() -> Dict[str, Any]:
+        """获取价格标记配置"""
+        return {
+            'show': True,
+            'high': {
+                'show': True,
+                'color': ChartConfig.UP_COLOR,
+                'textSize': 10
+            },
+            'low': {
+                'show': True,
+                'color': ChartConfig.DOWN_COLOR,
+                'textSize': 10
+            },
+            'last': {
+                'show': True,
+                'upColor': ChartConfig.UP_COLOR,
+                'downColor': ChartConfig.DOWN_COLOR,
+                'noChangeColor': ChartConfig.NO_CHANGE_COLOR,
+                'line': {
+                    'show': True,
+                    'style': 'dashed',
+                    'dashedValue': [4, 4],
+                    'size': 1
+                },
+                'text': {
+                    'show': True,
+                    'style': 'fill',
+                    'size': 12,
+                    'color': '#ffffff'
+                }
+            }
+        }
+
+    @staticmethod
+    def get_grid_config(color: str) -> Dict[str, Any]:
+        """获取网格配置"""
+        return {
+            'show': True,
+            'horizontal': {
+                'show': True,
+                'size': 1,
+                'color': color,
+                'style': 'dashed',
+                'dashedValue': [2, 2]
+            },
+            'vertical': {
+                'show': True,
+                'size': 1,
+                'color': color,
+                'style': 'dashed',
+                'dashedValue': [2, 2]
+            }
+        }
+
+    @staticmethod
+    def get_indicator_config(text_color: str) -> Dict[str, Any]:
+        """获取指标配置"""
+        return {
+            'ohlc': {
+                'upColor': f'rgba(239, 83, 80, 0.7)',
+                'downColor': f'rgba(38, 166, 154, 0.7)',
+                'noChangeColor': '#888888'
+            },
+            'bars': [{
+                'style': 'fill',
+                'borderStyle': 'solid',
+                'borderSize': 1,
+                'upColor': f'rgba(239, 83, 80, 0.7)',
+                'downColor': f'rgba(38, 166, 154, 0.7)',
+                'noChangeColor': '#888888'
+            }],
+            'lines': [
+                {'style': 'solid', 'smooth': False, 'size': 1, 'color': '#FF9600'},
+                {'style': 'solid', 'smooth': False, 'size': 1, 'color': '#935EBD'},
+                {'style': 'solid', 'smooth': False, 'size': 1, 'color': '#2196F3'}
+            ],
+            'tooltip': {
+                'showRule': 'always',
+                'showType': 'standard',
+                'showName': True,
+                'showParams': True,
+                'text': {
+                    'size': 12,
+                    'color': text_color
+                }
+            }
+        }
+
+    @staticmethod
+    def get_axis_config(text_color: str) -> Dict[str, Any]:
+        """获取坐标轴配置"""
+        return {
+            'show': True,
+            'size': 'auto',
+            'axisLine': {'show': True, 'color': '#888888', 'size': 1},
+            'tickText': {'show': True, 'color': text_color, 'size': 12},
+            'tickLine': {'show': True, 'size': 1, 'length': 3, 'color': '#888888'}
+        }
+
+    @staticmethod
+    def get_crosshair_config() -> Dict[str, Any]:
+        """获取十字光标配置"""
+        return {
+            'show': True,
+            'horizontal': {
+                'show': True,
+                'line': {'show': True, 'style': 'dashed', 'dashedValue': [4, 2], 'size': 1, 'color': '#888888'},
+                'text': {'show': True, 'style': 'fill', 'color': '#ffffff', 'size': 12, 'backgroundColor': '#686D76'}
+            },
+            'vertical': {
+                'show': True,
+                'line': {'show': True, 'style': 'dashed', 'dashedValue': [4, 2], 'size': 1, 'color': '#888888'},
+                'text': {'show': True, 'style': 'fill', 'color': '#ffffff', 'size': 12, 'backgroundColor': '#686D76'}
+            }
+        }
+
+    @classmethod
+    def get_dark_styles(cls) -> Dict[str, Any]:
+        """获取暗色主题完整样式配置"""
+        return {
+            'grid': cls.get_grid_config(ChartConfig.DARK_THEME_COLORS['grid']),
+            'candle': {
+                **cls.get_base_candle_styles(),
+                'tooltip': cls.get_tooltip_config(ChartConfig.DARK_THEME_COLORS['text']),
+                'priceMark': cls.get_price_mark_config()
+            },
+            'indicator': cls.get_indicator_config(ChartConfig.DARK_THEME_COLORS['text']),
+            'xAxis': cls.get_axis_config(ChartConfig.DARK_THEME_COLORS['text']),
+            'yAxis': {**cls.get_axis_config(ChartConfig.DARK_THEME_COLORS['text']), 'position': 'right'},
+            'crosshair': cls.get_crosshair_config()
+        }
+
+    @classmethod
+    def get_light_styles(cls) -> Dict[str, Any]:
+        """获取浅色主题完整样式配置"""
+        return {
+            'grid': cls.get_grid_config(ChartConfig.LIGHT_THEME_COLORS['grid']),
+            'candle': {
+                **cls.get_base_candle_styles(),
+                'tooltip': cls.get_tooltip_config(ChartConfig.LIGHT_THEME_COLORS['text']),
+                'priceMark': cls.get_price_mark_config()
+            },
+            'indicator': cls.get_indicator_config(ChartConfig.LIGHT_THEME_COLORS['text']),
+            'xAxis': cls.get_axis_config(ChartConfig.LIGHT_THEME_COLORS['text']),
+            'yAxis': {**cls.get_axis_config(ChartConfig.LIGHT_THEME_COLORS['text']), 'position': 'right'},
+            'crosshair': cls.get_crosshair_config()
+        }
+
+
+class ChartDataConverter:
+    """数据转换器 - 处理数据到 klinecharts 格式的转换"""
+
+    @staticmethod
+    def convert_timestamp(ts) -> Optional[int]:
+        """将时间戳转换为毫秒级时间戳
+
+        Returns:
+            int or None: 返回毫秒级时间戳，无效时间戳返回 None
+        """
         if pd.isna(ts):
-            return int(datetime.now().timestamp() * 1000)
+            logger.warning("Invalid timestamp encountered (NaN), skipping record")
+            return None
 
-        if isinstance(ts, str):
-            dt = pd.to_datetime(ts)
-        elif isinstance(ts, (pd.Timestamp, datetime)):
-            dt = ts
-        else:
-            return int(datetime.now().timestamp() * 1000)
+        try:
+            if isinstance(ts, str):
+                dt = pd.to_datetime(ts)
+            elif isinstance(ts, (pd.Timestamp, datetime)):
+                dt = ts
+            else:
+                logger.warning(f"Invalid timestamp type: {type(ts)}, skipping record")
+                return None
 
-        return int(dt.timestamp() * 1000)
+            return int(dt.timestamp() * 1000)
+        except Exception as e:
+            logger.warning(f"Timestamp conversion error: {e}, skipping record")
+            return None
 
-    def generate_kline_data(self, df: pd.DataFrame, max_points: int = 500) -> List[Dict[str, Any]]:
+    @classmethod
+    def convert_to_kline_format(cls, df: pd.DataFrame, max_points: int = None) -> List[Dict[str, Any]]:
         """
-        生成 klinecharts 兼容的K线数据
+        转换数据为 klinecharts 兼容格式
 
-        klinecharts 10.x 数据格式: 对象数组
-        每个对象包含: timestamp, open, high, low, close, volume
+        Args:
+            df: 包含 OHLCV 数据的 DataFrame
+            max_points: 最大数据点数，None 表示使用默认值
+
+        Returns:
+            klinecharts 9.8 格式的对象数组
         """
+        if max_points is None:
+            max_points = ChartConfig.DEFAULT_MAX_POINTS
+
         if df.empty:
             return []
 
         kline_data = []
 
         for _, row in df.iterrows():
+            timestamp = cls.convert_timestamp(row.get('date', row.name))
+            if timestamp is None:
+                continue
+
             item = {
-                'timestamp': self._convert_timestamp(row.get('date', row.name)),
-                'open': float(row['open']) if pd.notna(row['open']) else 0,
-                'high': float(row['high']) if pd.notna(row['high']) else 0,
-                'low': float(row['low']) if pd.notna(row['low']) else 0,
-                'close': float(row['close']) if pd.notna(row['close']) else 0,
-                'volume': float(row['volume']) if pd.notna(row['volume']) else 0
+                'timestamp': timestamp,
+                'open': float(row['open']) if pd.notna(row['open']) else None,
+                'high': float(row['high']) if pd.notna(row['high']) else None,
+                'low': float(row['low']) if pd.notna(row['low']) else None,
+                'close': float(row['close']) if pd.notna(row['close']) else None,
+                'volume': float(row['volume']) if pd.notna(row['volume']) else None
             }
-            kline_data.append(item)
+
+            if any(item[k] is not None for k in ['open', 'high', 'low', 'close']):
+                kline_data.append(item)
+
+        if len(kline_data) > max_points:
+            kline_data = kline_data[-max_points:]
+
+        return kline_data
+
+
+class ChartDataGenerator:
+    """K线图数据生成器"""
+
+    def __init__(self):
+        pass
+
+    def _convert_timestamp(self, ts) -> Optional[int]:
+        """将时间戳转换为毫秒级时间戳（向后兼容方法）"""
+        return ChartDataConverter.convert_timestamp(ts)
+
+    def generate_kline_data(self, df: pd.DataFrame, max_points: int = None) -> List[Dict[str, Any]]:
+        """
+        生成 klinecharts 兼容的K线数据
+
+        klinecharts 9.8 数据格式: 对象数组
+        每个对象包含: timestamp, open, high, low, close, volume
+
+        Args:
+            df: 包含 OHLCV 数据的 DataFrame
+            max_points: 最大数据点数，None 表示使用默认值
+
+        Note:
+            NaN 值将被转换为 None (JavaScript null)，而非 0
+            时间戳无效的记录将被跳过
+        """
+        if max_points is None:
+            max_points = ChartConfig.DEFAULT_MAX_POINTS
+
+        if df.empty:
+            return []
+
+        kline_data = []
+
+        for _, row in df.iterrows():
+            timestamp = self._convert_timestamp(row.get('date', row.name))
+            if timestamp is None:
+                continue  # 跳过时间戳无效的记录
+
+            item = {
+                'timestamp': timestamp,
+                'open': float(row['open']) if pd.notna(row['open']) else None,
+                'high': float(row['high']) if pd.notna(row['high']) else None,
+                'low': float(row['low']) if pd.notna(row['low']) else None,
+                'close': float(row['close']) if pd.notna(row['close']) else None,
+                'volume': float(row['volume']) if pd.notna(row['volume']) else None
+            }
+
+            # 只有当至少有一个有效价格数据时才添加
+            if any(item[k] is not None for k in ['open', 'high', 'low', 'close']):
+                kline_data.append(item)
 
         # 只返回最近的数据，避免数据量过大
         if len(kline_data) > max_points:
@@ -88,7 +409,7 @@ class ChartDataGenerator:
         """
         生成独立的HTML查看器
         包含多周期切换功能和报告显示
-        使用 klinecharts 10.0 API
+        使用 klinecharts 9.8 API
 
         Args:
             chart_data: 包含所有周期数据的字典 {'5min': data, '15min': data, ...}
@@ -100,7 +421,7 @@ class ChartDataGenerator:
         # 准备各周期的K线数据
         periods_data = {}
 
-        for period in ['5min', '15min', '60min', 'day']:
+        for period in ChartConfig.SUPPORTED_PERIODS:
             if period in chart_data and not chart_data[period].empty:
                 periods_data[period] = json.dumps(
                     self.generate_kline_data(chart_data[period]),
@@ -124,41 +445,112 @@ class ChartDataGenerator:
             padding: 0;
             box-sizing: border-box;
         }}
+
+        /* 暗色主题（默认） */
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             padding: 20px;
             color: #e0e0e0;
+            transition: all 0.3s ease;
         }}
+
+        body.light-theme {{
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            color: #2c3e50;
+        }}
+
         .container {{
             max-width: 1800px;
             margin: 0 auto;
         }}
+
         .header {{
             text-align: center;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }}
+
+        .header-left {{
+            flex: 1;
+        }}
+
         .header h1 {{
             color: #e94560;
             font-size: 28px;
             margin-bottom: 5px;
         }}
+
+        body.light-theme .header h1 {{
+            color: #c41e3a;
+        }}
+
         .header p {{
             color: #888;
             font-size: 14px;
         }}
+
+        body.light-theme .header p {{
+            color: #666;
+        }}
+
+        /* 主题切换按钮 */
+        .theme-toggle {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+
+        .theme-btn {{
+            padding: 8px 16px;
+            border: 1px solid #e94560;
+            background: transparent;
+            color: #e94560;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }}
+
+        .theme-btn:hover {{
+            background: #e94560;
+            color: #fff;
+        }}
+
+        body.light-theme .theme-btn {{
+            border-color: #c41e3a;
+            color: #c41e3a;
+        }}
+
+        body.light-theme .theme-btn:hover {{
+            background: #c41e3a;
+            color: #fff;
+        }}
+
         .main-content {{
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 20px;
         }}
+
         .chart-section {{
             background: #0f0f23;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
         }}
+
+        body.light-theme .chart-section {{
+            background: #ffffff;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }}
+
         .report-section {{
             background: #0f0f23;
             border-radius: 12px;
@@ -166,24 +558,43 @@ class ChartDataGenerator:
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             max-height: 800px;
             overflow-y: auto;
+            transition: all 0.3s ease;
         }}
+
+        body.light-theme .report-section {{
+            background: #ffffff;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }}
+
         .report-section::-webkit-scrollbar {{
             width: 8px;
         }}
+
         .report-section::-webkit-scrollbar-track {{
             background: #1a1a2e;
             border-radius: 4px;
         }}
+
+        body.light-theme .report-section::-webkit-scrollbar-track {{
+            background: #f0f0f0;
+        }}
+
         .report-section::-webkit-scrollbar-thumb {{
             background: #e94560;
             border-radius: 4px;
         }}
+
+        body.light-theme .report-section::-webkit-scrollbar-thumb {{
+            background: #c41e3a;
+        }}
+
         .period-tabs {{
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
         }}
+
         .period-tab {{
             padding: 10px 20px;
             background: #1a1a2e;
@@ -194,41 +605,134 @@ class ChartDataGenerator:
             transition: all 0.3s;
             font-size: 14px;
         }}
+
+        body.light-theme .period-tab {{
+            background: #f0f0f0;
+            border-color: #d0d0d0;
+        }}
+
         .period-tab:hover {{
             background: #2a2a3e;
             color: #e94560;
         }}
+
+        body.light-theme .period-tab:hover {{
+            background: #e0e0e0;
+            color: #c41e3a;
+        }}
+
         .period-tab.active {{
             background: #e94560;
             color: #fff;
             border-color: #e94560;
         }}
+
+        body.light-theme .period-tab.active {{
+            background: #c41e3a;
+            border-color: #c41e3a;
+        }}
+
+        .indicator-toggles {{
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }}
+
+        .indicator-toggle {{
+            padding: 8px 16px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #888;
+            transition: all 0.3s;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+
+        body.light-theme .indicator-toggle {{
+            background: #f0f0f0;
+            border-color: #d0d0d0;
+        }}
+
+        .indicator-toggle:hover {{
+            background: #2a2a3e;
+            color: #e94560;
+        }}
+
+        body.light-theme .indicator-toggle:hover {{
+            background: #e0e0e0;
+            color: #c41e3a;
+        }}
+
+        .indicator-toggle.active {{
+            background: #26a69a;
+            color: #fff;
+            border-color: #26a69a;
+        }}
+
+        body.light-theme .indicator-toggle.active {{
+            background: #26a69a;
+            border-color: #26a69a;
+        }}
+
+        .indicator-toggle .checkbox {{
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .indicator-toggle.active .checkbox::after {{
+            content: '✓';
+            font-size: 12px;
+        }}
+
         #chart {{
             width: 100%;
             height: 600px;
         }}
+
         .info {{
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-bottom: 15px;
         }}
+
         .info-item {{
             background: rgba(255,255,255,0.05);
             border-radius: 8px;
             padding: 10px;
             text-align: center;
         }}
+
+        body.light-theme .info-item {{
+            background: rgba(0,0,0,0.05);
+        }}
+
         .info-item .label {{
             color: #888;
             font-size: 12px;
             margin-bottom: 5px;
         }}
+
         .info-item .value {{
             color: #e94560;
             font-size: 18px;
             font-weight: bold;
         }}
+
+        body.light-theme .info-item .value {{
+            color: #c41e3a;
+        }}
+
         .report-section h2 {{
             color: #e94560;
             font-size: 20px;
@@ -236,43 +740,66 @@ class ChartDataGenerator:
             border-bottom: 1px solid #2a2a3e;
             padding-bottom: 10px;
         }}
+
+        body.light-theme .report-section h2 {{
+            color: #c41e3a;
+            border-bottom-color: #d0d0d0;
+        }}
+
         .report-section h3 {{
             color: #26a69a;
             font-size: 16px;
             margin-top: 15px;
             margin-bottom: 10px;
         }}
+
         .report-section p {{
             color: #aaa;
             font-size: 13px;
             line-height: 1.6;
             margin-bottom: 8px;
         }}
+
+        body.light-theme .report-section p {{
+            color: #555;
+        }}
+
         .report-section ul {{
             margin-left: 20px;
             margin-bottom: 10px;
         }}
+
         .report-section li {{
             color: #aaa;
             font-size: 13px;
             line-height: 1.6;
             margin-bottom: 5px;
         }}
+
+        body.light-theme .report-section li {{
+            color: #555;
+        }}
+
         .trend-up {{
             color: #ef5350;
         }}
+
         .trend-down {{
             color: #26a69a;
         }}
+
         .trend-neutral {{
             color: #888;
         }}
+
         .support-line {{
             color: #26a69a;
         }}
+
         .resistance-line {{
             color: #ef5350;
         }}
+
         .error {{
             color: #ef5350;
             text-align: center;
@@ -281,6 +808,7 @@ class ChartDataGenerator:
             border-radius: 8px;
             margin: 20px;
         }}
+
         @media (max-width: 1200px) {{
             .main-content {{
                 grid-template-columns: 1fr;
@@ -291,8 +819,13 @@ class ChartDataGenerator:
 <body>
     <div class="container">
         <div class="header">
-            <h1>📈 {0} 多周期技术分析图表</h1>
-            <p>5分钟 · 15分钟 · 60分钟 · 日线 | 实时切换</p>
+            <div class="header-left">
+                <h1>📈 {0} 多周期技术分析图表</h1>
+                <p>5分钟 · 15分钟 · 60分钟 · 日线 | 实时切换</p>
+            </div>
+            <div class="theme-toggle">
+                <button class="theme-btn" id="theme-toggle-btn">🌙 暗色主题</button>
+            </div>
         </div>
 
         <div class="main-content">
@@ -303,6 +836,22 @@ class ChartDataGenerator:
                     <div class="period-tab" data-period="15min">15分钟</div>
                     <div class="period-tab" data-period="60min">60分钟</div>
                     <div class="period-tab active" data-period="day">日线</div>
+                </div>
+
+                <!-- 指标切换按钮 -->
+                <div class="indicator-toggles">
+                    <div class="indicator-toggle active" data-indicator="VOL">
+                        <span class="checkbox"></span>
+                        <span>成交量</span>
+                    </div>
+                    <div class="indicator-toggle active" data-indicator="MACD">
+                        <span class="checkbox"></span>
+                        <span>MACD</span>
+                    </div>
+                    <div class="indicator-toggle" data-indicator="KDJ">
+                        <span class="checkbox"></span>
+                        <span>KDJ</span>
+                    </div>
                 </div>
 
                 <div class="info">
@@ -343,93 +892,395 @@ class ChartDataGenerator:
         // 当前选中的周期
         let currentPeriod = 'day';
         let chart = null;
+        let isDarkTheme = true;
+        let indicators = {{}};
 
-        // 初始化图表 - 使用 klinecharts 10.0 API
-        function initChart() {{
-            try {{
-                // klinecharts 10.0 初始化方式
-                chart = klinecharts.init('chart', {{
-                    layout: {{
-                        background: {{
-                            type: 'solid',
-                            color: '#0f0f23'
-                        }},
-                        textColor: '#d9d9d9'
+        // 指标状态（默认显示成交量和 MACD）
+        let indicatorStates = {{
+            'VOL': true,
+            'MACD': true,
+            'KDJ': false
+        }};
+
+        // 暗色主题样式配置 - 红涨绿跌（中国习惯）
+        const darkStyles = {{
+            grid: {{
+                show: true,
+                horizontal: {{
+                    show: true,
+                    size: 1,
+                    color: '#2a2a3e',
+                    style: 'dashed',
+                    dashedValue: [2, 2]
+                }},
+                vertical: {{
+                    show: true,
+                    size: 1,
+                    color: '#2a2a3e',
+                    style: 'dashed',
+                    dashedValue: [2, 2]
+                }}
+            }},
+            candle: {{
+                type: 'candle_solid',
+                bar: {{
+                    upColor: '#ef5350',           // 上涨红色
+                    downColor: '#26a69a',         // 下跌绿色
+                    noChangeColor: '#888888',
+                    upBorderColor: '#ef5350',     // 上涨边框红色
+                    downBorderColor: '#26a69a',   // 下跌边框绿色
+                    noChangeBorderColor: '#888888',
+                    upWickColor: '#ef5350',       // 上涨影线红色
+                    downWickColor: '#26a69a',     // 下跌影线绿色
+                    noChangeWickColor: '#888888'
+                }},
+                tooltip: {{
+                    showRule: 'always',
+                    showType: 'standard',
+                    custom: [
+                        {{ title: '时间', value: '{{time}}' }},
+                        {{ title: '开', value: '{{open}}' }},
+                        {{ title: '高', value: '{{high}}' }},
+                        {{ title: '低', value: '{{low}}' }},
+                        {{ title: '收', value: '{{close}}' }},
+                        {{ title: '成交量', value: '{{volume}}' }}
+                    ],
+                    text: {{
+                        size: 12,
+                        color: '#d9d9d9'
+                    }}
+                }},
+                priceMark: {{
+                    show: true,
+                    high: {{
+                        show: true,
+                        color: '#ef5350',
+                        textSize: 10
                     }},
-                    candle: {{
-                        type: 'candle_solid',
-                        bar: {{
-                            upColor: '#ef5350',      // 上涨红色（中国习惯）
-                            downColor: '#26a69a',    // 下跌绿色
-                            noChangeColor: '#888888'
-                        }},
-                        tooltip: {{
-                            showRule: 'always',
-                            showType: 'standard',
-                            labels: ['时间: ', '开: ', '高: ', '低: ', '收: ', '涨跌幅: '],
-                            text: {{
-                                size: 12,
-                                color: '#d9d9d9'
-                            }}
-                        }},
-                        priceMark: {{
+                    low: {{
+                        show: true,
+                        color: '#26a69a',
+                        textSize: 10
+                    }},
+                    last: {{
+                        show: true,
+                        upColor: '#ef5350',
+                        downColor: '#26a69a',
+                        noChangeColor: '#888888',
+                        line: {{
                             show: true,
-                            high: {{
-                                show: true,
-                                color: '#ef5350',
-                                textSize: 10
-                            }},
-                            low: {{
-                                show: true,
-                                color: '#26a69a',
-                                textSize: 10
-                            }},
-                            last: {{
-                                show: true,
-                                upColor: '#ef5350',
-                                downColor: '#26a69a',
-                                noChangeColor: '#888888',
-                                text: {{
-                                    show: true,
-                                    size: 12
-                                }}
-                            }}
+                            style: 'dashed',
+                            dashedValue: [4, 4],
+                            size: 1
+                        }},
+                        text: {{
+                            show: true,
+                            style: 'fill',
+                            size: 12,
+                            color: '#ffffff'
                         }}
                     }}
-                }});
-
-                // 创建技术指标窗口
-                chart.createIndicator('MA', false, {{ id: 'candle_pane' }});
-                chart.createIndicator('VOL', false, {{ height: 80 }});
-                chart.createIndicator('MACD', false, {{ height: 80 }});
-
-                // klinecharts 10.x: 设置数据加载器
-                chart.setDataLoader({{
-                    getBars: function(params) {{
-                        return periodData[currentPeriod];
+                }}
+            }},
+            indicator: {{
+                ohlc: {{
+                    upColor: 'rgba(239, 83, 80, 0.7)',
+                    downColor: 'rgba(38, 166, 154, 0.7)',
+                    noChangeColor: '#888888'
+                }},
+                bars: [{{
+                    style: 'fill',
+                    borderStyle: 'solid',
+                    borderSize: 1,
+                    upColor: 'rgba(239, 83, 80, 0.7)',
+                    downColor: 'rgba(38, 166, 154, 0.7)',
+                    noChangeColor: '#888888'
+                }}],
+                lines: [
+                    {{ style: 'solid', smooth: false, size: 1, color: '#FF9600' }},
+                    {{ style: 'solid', smooth: false, size: 1, color: '#935EBD' }},
+                    {{ style: 'solid', smooth: false, size: 1, color: '#2196F3' }}
+                ],
+                tooltip: {{
+                    showRule: 'always',
+                    showType: 'standard',
+                    showName: true,
+                    showParams: true,
+                    text: {{
+                        size: 12,
+                        color: '#d9d9d9'
                     }}
+                }}
+            }},
+            xAxis: {{
+                show: true,
+                size: 'auto',
+                axisLine: {{ show: true, color: '#888888', size: 1 }},
+                tickText: {{ show: true, color: '#d9d9d9', size: 12 }},
+                tickLine: {{ show: true, size: 1, length: 3, color: '#888888' }}
+            }},
+            yAxis: {{
+                show: true,
+                size: 'auto',
+                position: 'right',
+                axisLine: {{ show: true, color: '#888888', size: 1 }},
+                tickText: {{ show: true, color: '#d9d9d9', size: 12 }},
+                tickLine: {{ show: true, size: 1, length: 3, color: '#888888' }}
+            }},
+            crosshair: {{
+                show: true,
+                horizontal: {{
+                    show: true,
+                    line: {{ show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#888888' }},
+                    text: {{ show: true, style: 'fill', color: '#ffffff', size: 12, backgroundColor: '#686D76' }}
+                }},
+                vertical: {{
+                    show: true,
+                    line: {{ show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#888888' }},
+                    text: {{ show: true, style: 'fill', color: '#ffffff', size: 12, backgroundColor: '#686D76' }}
+                }}
+            }}
+        }};
+
+        // 浅色主题样式配置 - 红涨绿跌（中国习惯）
+        const lightStyles = {{
+            grid: {{
+                show: true,
+                horizontal: {{
+                    show: true,
+                    size: 1,
+                    color: '#e0e0e0',
+                    style: 'dashed',
+                    dashedValue: [2, 2]
+                }},
+                vertical: {{
+                    show: true,
+                    size: 1,
+                    color: '#e0e0e0',
+                    style: 'dashed',
+                    dashedValue: [2, 2]
+                }}
+            }},
+            candle: {{
+                type: 'candle_solid',
+                bar: {{
+                    upColor: '#ef5350',           // 上涨红色
+                    downColor: '#26a69a',         // 下跌绿色
+                    noChangeColor: '#888888',
+                    upBorderColor: '#ef5350',     // 上涨边框红色
+                    downBorderColor: '#26a69a',   // 下跌边框绿色
+                    noChangeBorderColor: '#888888',
+                    upWickColor: '#ef5350',       // 上涨影线红色
+                    downWickColor: '#26a69a',     // 下跌影线绿色
+                    noChangeWickColor: '#888888'
+                }},
+                tooltip: {{
+                    showRule: 'always',
+                    showType: 'standard',
+                    custom: [
+                        {{ title: '时间', value: '{{time}}' }},
+                        {{ title: '开', value: '{{open}}' }},
+                        {{ title: '高', value: '{{high}}' }},
+                        {{ title: '低', value: '{{low}}' }},
+                        {{ title: '收', value: '{{close}}' }},
+                        {{ title: '成交量', value: '{{volume}}' }}
+                    ],
+                    text: {{
+                        size: 12,
+                        color: '#2c3e50'
+                    }}
+                }},
+                priceMark: {{
+                    show: true,
+                    high: {{
+                        show: true,
+                        color: '#ef5350',
+                        textSize: 10
+                    }},
+                    low: {{
+                        show: true,
+                        color: '#26a69a',
+                        textSize: 10
+                    }},
+                    last: {{
+                        show: true,
+                        upColor: '#ef5350',
+                        downColor: '#26a69a',
+                        noChangeColor: '#888888',
+                        line: {{
+                            show: true,
+                            style: 'dashed',
+                            dashedValue: [4, 4],
+                            size: 1
+                        }},
+                        text: {{
+                            show: true,
+                            style: 'fill',
+                            size: 12,
+                            color: '#ffffff'
+                        }}
+                    }}
+                }}
+            }},
+            indicator: {{
+                ohlc: {{
+                    upColor: 'rgba(239, 83, 80, 0.7)',
+                    downColor: 'rgba(38, 166, 154, 0.7)',
+                    noChangeColor: '#888888'
+                }},
+                bars: [{{
+                    style: 'fill',
+                    borderStyle: 'solid',
+                    borderSize: 1,
+                    upColor: 'rgba(239, 83, 80, 0.7)',
+                    downColor: 'rgba(38, 166, 154, 0.7)',
+                    noChangeColor: '#888888'
+                }}],
+                lines: [
+                    {{ style: 'solid', smooth: false, size: 1, color: '#FF9600' }},
+                    {{ style: 'solid', smooth: false, size: 1, color: '#935EBD' }},
+                    {{ style: 'solid', smooth: false, size: 1, color: '#2196F3' }}
+                ],
+                tooltip: {{
+                    showRule: 'always',
+                    showType: 'standard',
+                    showName: true,
+                    showParams: true,
+                    text: {{
+                        size: 12,
+                        color: '#2c3e50'
+                    }}
+                }}
+            }},
+            xAxis: {{
+                show: true,
+                size: 'auto',
+                axisLine: {{ show: true, color: '#888888', size: 1 }},
+                tickText: {{ show: true, color: '#2c3e50', size: 12 }},
+                tickLine: {{ show: true, size: 1, length: 3, color: '#888888' }}
+            }},
+            yAxis: {{
+                show: true,
+                size: 'auto',
+                position: 'right',
+                axisLine: {{ show: true, color: '#888888', size: 1 }},
+                tickText: {{ show: true, color: '#2c3e50', size: 12 }},
+                tickLine: {{ show: true, size: 1, length: 3, color: '#888888' }}
+            }},
+            crosshair: {{
+                show: true,
+                horizontal: {{
+                    show: true,
+                    line: {{ show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#888888' }},
+                    text: {{ show: true, style: 'fill', color: '#ffffff', size: 12, backgroundColor: '#686D76' }}
+                }},
+                vertical: {{
+                    show: true,
+                    line: {{ show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#888888' }},
+                    text: {{ show: true, style: 'fill', color: '#ffffff', size: 12, backgroundColor: '#686D76' }}
+                }}
+            }}
+        }};
+
+        // 初始化图表 - 使用 klinecharts 9.8 API
+        function initChart() {{
+            try {{
+                // klinecharts 9.8 初始化方式
+                chart = klinecharts.init('chart', {{
+                    styles: darkStyles,
+                    layout: [
+                        {{
+                            type: 'candle',
+                            content: [],
+                            options: {{ id: 'candle_pane' }}
+                        }}
+                    ]
                 }});
 
-                loadPeriodData('day');
-                console.log('✅ K线图表加载成功 (klinecharts 10.0)');
+                // 创建 MA 指标（在蜡烛图中显示）
+                chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+
+                // 根据默认状态创建指标
+                if (indicatorStates['VOL']) {{
+                    indicators['VOL'] = chart.createIndicator('VOL', false, {{ height: 80 }});
+                }}
+                if (indicatorStates['MACD']) {{
+                    indicators['MACD'] = chart.createIndicator('MACD', false, {{ height: 80 }});
+                }}
+                if (indicatorStates['KDJ']) {{
+                    indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
+                }}
+
+                // 加载初始数据
+                const data = periodData['day'];
+                if (data && data.length > 0) {{
+                    chart.applyNewData(data);
+                }}
+
+                console.log('✅ K线图表加载成功 (klinecharts 9.8)');
             }} catch (error) {{
                 console.error('❌ K线图表加载失败:', error);
                 showError('图表加载失败: ' + error.message);
             }}
         }}
 
+        // 切换主题
+        function toggleTheme() {{
+            isDarkTheme = !isDarkTheme;
+            const body = document.body;
+            const btn = document.getElementById('theme-toggle-btn');
+
+            if (isDarkTheme) {{
+                body.classList.remove('light-theme');
+                btn.textContent = '🌙 暗色主题';
+                if (chart) {{
+                    chart.setStyles(darkStyles);
+                }}
+            }} else {{
+                body.classList.add('light-theme');
+                btn.textContent = '☀️ 浅色主题';
+                if (chart) {{
+                    chart.setStyles(lightStyles);
+                }}
+            }}
+        }}
+
+        // 切换指标显示
+        function toggleIndicator(indicatorName) {{
+            if (!chart) return;
+
+            const btn = document.querySelector(`.indicator-toggle[data-indicator="{{indicatorName}}"]`);
+
+            if (indicatorStates[indicatorName]) {{
+                // 隐藏指标 - klinecharts 9.8: 使用实例而非名称
+                if (indicators[indicatorName]) {{
+                    chart.removeIndicator(indicators[indicatorName]);
+                    delete indicators[indicatorName];
+                }}
+                indicatorStates[indicatorName] = false;
+                if (btn) btn.classList.remove('active');
+            }} else {{
+                // 显示指标
+                indicators[indicatorName] = chart.createIndicator(indicatorName, false, {{ height: 80 }});
+                indicatorStates[indicatorName] = true;
+                if (btn) btn.classList.add('active');
+            }}
+        }}
+
         // 加载指定周期数据
         function loadPeriodData(period) {{
+            if (!chart) return;
+
             const data = periodData[period];
             if (!data || data.length === 0) {{
                 showError('暂无' + getPeriodName(period) + '数据');
                 return;
             }}
 
-            currentPeriod = period;  // 更新当前周期
+            currentPeriod = period;
 
-            // klinecharts 10.x: 使用 resetData 触发数据重新加载
-            chart.resetData();
+            // klinecharts 9.8: 使用 applyNewData 加载新数据
+            chart.applyNewData(data);
 
             document.getElementById('data-count').textContent = data.length;
             document.getElementById('current-period').textContent = getPeriodName(period);
@@ -481,10 +1332,28 @@ class ChartDataGenerator:
                 this.classList.add('active');
 
                 // 加载新周期数据
-                currentPeriod = period;
                 loadPeriodData(period);
             }});
         }});
+
+        // 指标切换事件
+        document.querySelectorAll('.indicator-toggle').forEach(toggle => {{
+            const indicatorName = toggle.getAttribute('data-indicator');
+
+            // 设置初始状态
+            if (indicatorStates[indicatorName]) {{
+                toggle.classList.add('active');
+            }} else {{
+                toggle.classList.remove('active');
+            }}
+
+            toggle.addEventListener('click', function() {{
+                toggleIndicator(indicatorName);
+            }});
+        }});
+
+        // 主题切换事件
+        document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
 
         // 响应式
         window.addEventListener('resize', () => {{
@@ -545,19 +1414,12 @@ class ChartDataGenerator:
 
             html_parts.append('</div>')
 
-        # 各周期报告
-        period_names = {
-            'day': '日线',
-            '60min': '60分钟',
-            '15min': '15分钟',
-            '5min': '5分钟'
-        }
-
-        for period in ['day', '60min', '15min', '5min']:
+        # 各周期报告 - 使用 ChartConfig 中的周期配置
+        for period in reversed(ChartConfig.SUPPORTED_PERIODS):
             if period not in report_data:
                 continue
 
-            period_name = period_names.get(period, period)
+            period_name = ChartConfig.PERIOD_NAMES.get(period, period)
             data = report_data[period]
 
             html_parts.append(f'''
@@ -631,6 +1493,195 @@ class ChartDataGenerator:
             html_parts.append('</div>')
 
         return ''.join(html_parts)
+
+    def generate_html_report(
+        self,
+        symbol: str,
+        text_report: str,
+        output_path: str
+    ) -> None:
+        """
+        生成HTML格式的技术分析报告
+
+        Args:
+            symbol: 品种代码
+            text_report: 文本报告内容
+            output_path: 输出路径
+        """
+        # 将文本报告转换为HTML格式
+        html_content = text_report.replace('\n', '<br>\n')
+
+        # 转义特殊字符
+        import html as html_module
+        html_content = html_module.escape(html_content)
+
+        # 恢复换行标签
+        html_content = html_content.replace('&lt;br&gt;', '<br>')
+
+        # 构建HTML文档
+        html_template = f'''<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{symbol.upper()} 技术分析报告</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e0e0e0;
+            line-height: 1.8;
+            transition: all 0.3s ease;
+        }}
+        body.light-theme {{
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+            color: #2c3e50;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(15, 15, 35, 0.8);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }}
+        body.light-theme .container {{
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }}
+        .header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }}
+        .header h1 {{
+            color: #e94560;
+            font-size: 28px;
+        }}
+        body.light-theme .header h1 {{
+            color: #c41e3a;
+        }}
+        .theme-toggle button {{
+            padding: 8px 16px;
+            border: 1px solid #e94560;
+            background: transparent;
+            color: #e94560;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }}
+        body.light-theme .theme-toggle button {{
+            border-color: #c41e3a;
+            color: #c41e3a;
+        }}
+        .theme-toggle button:hover {{
+            background: #e94560;
+            color: #fff;
+        }}
+        body.light-theme .theme-toggle button:hover {{
+            background: #c41e3a;
+            color: #fff;
+        }}
+        .back-link {{
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+        .back-link a {{
+            color: #e94560;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }}
+        body.light-theme .back-link a {{
+            color: #c41e3a;
+            border-color: #c41e3a;
+        }}
+        .back-link a:hover {{
+            background: #e94560;
+            color: #fff;
+        }}
+        .subtitle {{
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }}
+        body.light-theme .subtitle {{
+            color: #666;
+        }}
+        .report-content {{
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+        body.light-theme .report-content {{
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.1);
+        }}
+        .footer {{
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 {symbol.upper()} 技术分析报告</h1>
+            <div class="theme-toggle">
+                <button id="theme-toggle-btn">🌙 暗色主题</button>
+            </div>
+        </div>
+        <p class="subtitle">生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <div class="report-content">{html_content}</div>
+        <div class="footer">
+            <p>期货技术分析系统 © 2026</p>
+        </div>
+    </div>
+    <script>
+        let isDarkTheme = true;
+        function toggleTheme() {{
+            isDarkTheme = !isDarkTheme;
+            const body = document.body;
+            const btn = document.getElementById('theme-toggle-btn');
+            if (isDarkTheme) {{
+                body.classList.remove('light-theme');
+                btn.textContent = '🌙 暗色主题';
+            }} else {{
+                body.classList.add('light-theme');
+                btn.textContent = '☀️ 浅色主题';
+            }}
+        }}
+        document.getElementById('theme-toggle-btn').addEventListener('click', toggleTheme);
+    </script>
+</body>
+</html>'''
+
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(html_template)
+
+        logger.info(f"HTML报告已生成: {output_path}")
 
     def save_chart_data(self, chart_data: Dict[str, Any], filepath: str) -> None:
         """保存图表数据到文件"""
