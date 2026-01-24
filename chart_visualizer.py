@@ -3,6 +3,7 @@ K线图可视化数据生成模块
 
 生成与 klinecharts 前端库兼容的数据格式，并创建HTML查看器
 支持多周期切换和报告显示
+使用 klinecharts 10.0 技术栈
 """
 
 from typing import Dict, List, Optional, Any
@@ -39,7 +40,7 @@ class ChartDataGenerator:
         """
         生成 klinecharts 兼容的K线数据
 
-        klinecharts 9.x/10.x 数据格式: 对象数组
+        klinecharts 10.x 数据格式: 对象数组
         每个对象包含: timestamp, open, high, low, close, volume
         """
         if df.empty:
@@ -87,6 +88,7 @@ class ChartDataGenerator:
         """
         生成独立的HTML查看器
         包含多周期切换功能和报告显示
+        使用 klinecharts 10.0 API
 
         Args:
             chart_data: 包含所有周期数据的字典 {'5min': data, '15min': data, ...}
@@ -97,12 +99,6 @@ class ChartDataGenerator:
 
         # 准备各周期的K线数据
         periods_data = {}
-        period_names = {
-            '5min': '5分钟',
-            '15min': '15分钟',
-            '60min': '60分钟',
-            'day': '日线'
-        }
 
         for period in ['5min', '15min', '60min', 'day']:
             if period in chart_data and not chart_data[period].empty:
@@ -111,15 +107,8 @@ class ChartDataGenerator:
                     ensure_ascii=False
                 )
 
-        # 获取默认周期数据（15分钟）
-        default_data = periods_data.get('15min', periods_data.get('day', '[]'))
-
         # 准备报告HTML内容
         report_html = self._generate_report_html(report_data, symbol)
-
-        # 读取本地 klinecharts.min.js 内容
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        js_path = os.path.join(script_dir, 'output', 'klinecharts.min.js')
 
         # 使用 .format() 方法生成HTML
         html_template = '''<!DOCTYPE html>
@@ -270,13 +259,19 @@ class ChartDataGenerator:
             margin-bottom: 5px;
         }}
         .trend-up {{
-            color: #26a69a;
+            color: #ef5350;
         }}
         .trend-down {{
-            color: #ef5350;
+            color: #26a69a;
         }}
         .trend-neutral {{
             color: #888;
+        }}
+        .support-line {{
+            color: #26a69a;
+        }}
+        .resistance-line {{
+            color: #ef5350;
         }}
         .error {{
             color: #ef5350;
@@ -349,49 +344,54 @@ class ChartDataGenerator:
         let currentPeriod = 'day';
         let chart = null;
 
-        // 初始化图表
+        // 初始化图表 - 使用 klinecharts 10.0 API
         function initChart() {{
             try {{
-                // 使用 klinecharts 9.x 正确的初始化方式
+                // klinecharts 10.0 初始化方式
                 chart = klinecharts.init('chart', {{
-                    styles: {{
-                        candle: {{
-                            type: 'candle_solid',
-                            bar: {{
-                                upColor: '#ef5350',      // 上涨红色
-                                downColor: '#26a69a',    // 下跌绿色
-                                noChangeColor: '#888888'
-                            }},
-                            tooltip: {{
-                                showRule: 'always',
-                                showType: 'standard',
-                                labels: ['时间: ', '开: ', '高: ', '低: ', '收: ', '涨跌幅: '],
-                                text: {{
-                                    size: 12,
-                                    color: '#d9d9d9'
-                                }}
-                            }},
-                            priceMark: {{
+                    layout: {{
+                        background: {{
+                            type: 'solid',
+                            color: '#0f0f23'
+                        }},
+                        textColor: '#d9d9d9'
+                    }},
+                    candle: {{
+                        type: 'candle_solid',
+                        bar: {{
+                            upColor: '#ef5350',      // 上涨红色（中国习惯）
+                            downColor: '#26a69a',    // 下跌绿色
+                            noChangeColor: '#888888'
+                        }},
+                        tooltip: {{
+                            showRule: 'always',
+                            showType: 'standard',
+                            labels: ['时间: ', '开: ', '高: ', '低: ', '收: ', '涨跌幅: '],
+                            text: {{
+                                size: 12,
+                                color: '#d9d9d9'
+                            }}
+                        }},
+                        priceMark: {{
+                            show: true,
+                            high: {{
                                 show: true,
-                                high: {{
+                                color: '#ef5350',
+                                textSize: 10
+                            }},
+                            low: {{
+                                show: true,
+                                color: '#26a69a',
+                                textSize: 10
+                            }},
+                            last: {{
+                                show: true,
+                                upColor: '#ef5350',
+                                downColor: '#26a69a',
+                                noChangeColor: '#888888',
+                                text: {{
                                     show: true,
-                                    color: '#ef5350',
-                                    textSize: 10
-                                }},
-                                low: {{
-                                    show: true,
-                                    color: '#26a69a',
-                                    textSize: 10
-                                }},
-                                last: {{
-                                    show: true,
-                                    upColor: '#ef5350',
-                                    downColor: '#26a69a',
-                                    noChangeColor: '#888888',
-                                    text: {{
-                                        show: true,
-                                        size: 12
-                                    }}
+                                    size: 12
                                 }}
                             }}
                         }}
@@ -404,7 +404,7 @@ class ChartDataGenerator:
                 chart.createIndicator('MACD', false, {{ height: 80 }});
 
                 loadPeriodData('day');
-                console.log('✅ K线图表加载成功');
+                console.log('✅ K线图表加载成功 (klinecharts 10.0)');
             }} catch (error) {{
                 console.error('❌ K线图表加载失败:', error);
                 showError('图表加载失败: ' + error.message);
@@ -507,6 +507,33 @@ class ChartDataGenerator:
         # 添加标题
         html_parts.append(f'<h2>📊 {symbol} 技术分析报告</h2>')
 
+        # 首先显示支撑阻力（所有周期通用）
+        if 'support_resistance' in report_data:
+            sr = report_data['support_resistance']
+            html_parts.append('''
+            <div class="period-report" id="report-support" style="display: block;">
+                <h3>🎯 支撑压力位</h3>
+            ''')
+
+            current_price = sr.get('current_price', 0)
+            html_parts.append(f'<p><strong>当前价格:</strong> {current_price:.2f}</p>')
+
+            if sr.get('resistance_levels'):
+                html_parts.append('<p><strong>上方压力位（阻力）:</strong></p><ul>')
+                for i, r in enumerate(sr['resistance_levels'][:3], 1):
+                    distance = ((r - current_price) / current_price * 100) if current_price > 0 else 0
+                    html_parts.append(f'<li class="resistance-line">R{i}: {r:.2f} ({distance:+.2f}%)</li>')
+                html_parts.append('</ul>')
+
+            if sr.get('support_levels'):
+                html_parts.append('<p><strong>下方支撑位:</strong></p><ul>')
+                for i, s in enumerate(sr['support_levels'][:3], 1):
+                    distance = ((current_price - s) / current_price * 100) if current_price > 0 else 0
+                    html_parts.append(f'<li class="support-line">S{i}: {s:.2f} ({-distance:.2f}%)</li>')
+                html_parts.append('</ul>')
+
+            html_parts.append('</div>')
+
         # 各周期报告
         period_names = {
             'day': '日线',
@@ -530,6 +557,7 @@ class ChartDataGenerator:
             # 趋势分析
             if 'trend' in data:
                 trend = data['trend']
+                # 修改颜色：红色=上涨，绿色=下跌
                 trend_class = 'trend-up' if trend == 'uptrend' else 'trend-down' if trend == 'downtrend' else 'trend-neutral'
                 trend_text = {'uptrend': '📈 上升', 'downtrend': '📉 下降', 'sideways': '➡️ 震荡'}.get(trend, trend)
                 html_parts.append(f'<p class="{trend_class}"><strong>趋势:</strong> {trend_text}</p>')
@@ -585,35 +613,8 @@ class ChartDataGenerator:
             if 'patterns' in data and data['patterns']:
                 html_parts.append('<p><strong>K线形态:</strong></p><ul>')
                 for pattern in data['patterns'][:5]:  # 最多显示5个
-                    signal_icon = '🟢' if pattern['signal'] == 'bullish' else '🔴' if pattern['signal'] == 'bearish' else '⚪'
+                    signal_icon = '🔴' if pattern['signal'] == 'bullish' else '🟢' if pattern['signal'] == 'bearish' else '⚪'
                     html_parts.append(f'<li>{signal_icon} {pattern["pattern"]}</li>')
-                html_parts.append('</ul>')
-
-            html_parts.append('</div>')
-
-        # 支撑阻力（只在日线显示）
-        if 'support_resistance' in report_data:
-            sr = report_data['support_resistance']
-            html_parts.append('''
-            <div class="period-report" id="report-support" style="display: block;">
-                <h3>支撑阻力</h3>
-            ''')
-
-            current_price = sr.get('current_price', 0)
-            html_parts.append(f'<p><strong>当前价格:</strong> {current_price:.2f}</p>')
-
-            if sr.get('resistance_levels'):
-                html_parts.append('<p><strong>上方阻力位:</strong></p><ul>')
-                for i, r in enumerate(sr['resistance_levels'][:3], 1):
-                    distance = ((r - current_price) / current_price * 100) if current_price > 0 else 0
-                    html_parts.append(f'<li>R{i}: {r:.2f} ({distance:+.2f}%)</li>')
-                html_parts.append('</ul>')
-
-            if sr.get('support_levels'):
-                html_parts.append('<p><strong>下方支撑位:</strong></p><ul>')
-                for i, s in enumerate(sr['support_levels'][:3], 1):
-                    distance = ((current_price - s) / current_price * 100) if current_price > 0 else 0
-                    html_parts.append(f'<li>S{i}: {s:.2f} ({-distance:.2f}%)</li>')
                 html_parts.append('</ul>')
 
             html_parts.append('</div>')

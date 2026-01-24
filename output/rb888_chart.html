@@ -146,13 +146,19 @@
             margin-bottom: 5px;
         }
         .trend-up {
-            color: #26a69a;
+            color: #ef5350;
         }
         .trend-down {
-            color: #ef5350;
+            color: #26a69a;
         }
         .trend-neutral {
             color: #888;
+        }
+        .support-line {
+            color: #26a69a;
+        }
+        .resistance-line {
+            color: #ef5350;
         }
         .error {
             color: #ef5350;
@@ -208,21 +214,21 @@
             <!-- 右侧报告区域 -->
             <div class="report-section">
                 <h2>📊 rb888 技术分析报告</h2>
+            <div class="period-report" id="report-support" style="display: block;">
+                <h3>🎯 支撑压力位</h3>
+            <p><strong>当前价格:</strong> 3142.00</p><p><strong>上方压力位（阻力）:</strong></p><ul><li class="resistance-line">R1: 3198.00 (+1.78%)</li><li class="resistance-line">R2: 3194.00 (+1.65%)</li></ul><p><strong>下方支撑位:</strong></p><ul><li class="support-line">S1: 3009.00 (-4.23%)</li><li class="support-line">S2: 3031.00 (-3.53%)</li><li class="support-line">S3: 3085.00 (-1.81%)</li></ul></div>
             <div class="period-report" id="report-day" style="display: block;">
                 <h3>日线分析</h3>
             <p class="trend-down"><strong>趋势:</strong> 📉 下降</p><p><strong>均线:</strong> 均线纠缠，价格站上5日线</p><p><strong>MACD:</strong> DIF下穿DEA持续</p><p><strong>KDJ:</strong> K线下穿D线持续</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3126.80</li><li>MA10: 3144.20</li><li>MA20: 3139.35</li><li>MACD: -8.10 (绿柱)</li><li>KDJ: 32.34 (正常)</li><li>RSI: 52.48 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 大阳线</li><li>⚪ 十字星</li><li>⚪ 十字星</li><li>⚪ 大阴线</li><li>⚪ 中阴线</li></ul></div>
             <div class="period-report" id="report-60min" style="display: none;">
                 <h3>60分钟分析</h3>
-            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 短期多头，价格站上5日线</p><p><strong>MACD:</strong> DIF上穿DEA持续</p><p><strong>KDJ:</strong> K线上穿D线持续</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3144.60</li><li>MA10: 3136.20</li><li>MA20: 3127.50</li><li>MACD: 8.66 (红柱)</li><li>KDJ: 80.21 (超买)</li><li>RSI: 60.97 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 十字星</li><li>🟢 早晨之星（看涨）</li><li>⚪ 十字星</li><li>⚪ 十字星</li><li>⚪ 大阳线</li></ul></div>
+            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 短期多头，价格站上5日线</p><p><strong>MACD:</strong> DIF上穿DEA持续</p><p><strong>KDJ:</strong> K线上穿D线持续</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3144.60</li><li>MA10: 3136.20</li><li>MA20: 3127.50</li><li>MACD: 8.66 (红柱)</li><li>KDJ: 80.21 (超买)</li><li>RSI: 60.97 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 十字星</li><li>🔴 早晨之星（看涨）</li><li>⚪ 十字星</li><li>⚪ 十字星</li><li>⚪ 大阳线</li></ul></div>
             <div class="period-report" id="report-15min" style="display: none;">
                 <h3>15分钟分析</h3>
-            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 多头排列，价格站上5日线</p><p><strong>MACD:</strong> DIF上穿DEA持续</p><p><strong>KDJ:</strong> K线下穿D线持续</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3150.00</li><li>MA10: 3148.40</li><li>MA20: 3143.60</li><li>MACD: 0.37 (红柱)</li><li>KDJ: 60.52 (正常)</li><li>RSI: 62.22 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 大阳线</li><li>🟢 阳包阴（看涨）</li><li>⚪ 小阴线</li><li>⚪ 十字星</li><li>⚪ 十字星（长上下影）</li></ul></div>
+            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 多头排列，价格站上5日线</p><p><strong>MACD:</strong> DIF上穿DEA持续</p><p><strong>KDJ:</strong> K线下穿D线持续</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3150.00</li><li>MA10: 3148.40</li><li>MA20: 3143.60</li><li>MACD: 0.37 (红柱)</li><li>KDJ: 60.52 (正常)</li><li>RSI: 62.22 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 大阳线</li><li>🔴 阳包阴（看涨）</li><li>⚪ 小阴线</li><li>⚪ 十字星</li><li>⚪ 十字星（长上下影）</li></ul></div>
             <div class="period-report" id="report-5min" style="display: none;">
                 <h3>5分钟分析</h3>
-            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 多头排列，价格站上5日线</p><p><strong>MACD:</strong> DIF下穿DEA持续</p><p><strong>KDJ:</strong> KDJ金叉</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3149.60</li><li>MA10: 3149.30</li><li>MA20: 3149.00</li><li>MACD: -0.48 (绿柱)</li><li>KDJ: 73.23 (正常)</li><li>RSI: 57.33 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 中阳线</li><li>⚪ 十字星（长上下影）</li><li>⚪ 大阳线</li><li>🟢 早晨之星（看涨）</li><li>⚪ 十字星</li></ul></div>
-            <div class="period-report" id="report-support" style="display: block;">
-                <h3>支撑阻力</h3>
-            <p><strong>当前价格:</strong> 3142.00</p><p><strong>上方阻力位:</strong></p><ul><li>R1: 3198.00 (+1.78%)</li><li>R2: 3194.00 (+1.65%)</li></ul><p><strong>下方支撑位:</strong></p><ul><li>S1: 3009.00 (-4.23%)</li><li>S2: 3031.00 (-3.53%)</li><li>S3: 3085.00 (-1.81%)</li></ul></div>
+            <p class="trend-up"><strong>趋势:</strong> 📈 上升</p><p><strong>均线:</strong> 多头排列，价格站上5日线</p><p><strong>MACD:</strong> DIF下穿DEA持续</p><p><strong>KDJ:</strong> KDJ金叉</p><p><strong>技术指标:</strong></p><ul><li>MA5: 3149.60</li><li>MA10: 3149.30</li><li>MA20: 3149.00</li><li>MACD: -0.48 (绿柱)</li><li>KDJ: 73.23 (正常)</li><li>RSI: 57.33 (正常)</li></ul><p><strong>K线形态:</strong></p><ul><li>⚪ 中阳线</li><li>⚪ 十字星（长上下影）</li><li>⚪ 大阳线</li><li>🔴 早晨之星（看涨）</li><li>⚪ 十字星</li></ul></div>
             </div>
         </div>
     </div>
@@ -240,49 +246,54 @@
         let currentPeriod = 'day';
         let chart = null;
 
-        // 初始化图表
+        // 初始化图表 - 使用 klinecharts 10.0 API
         function initChart() {
             try {
-                // 使用 klinecharts 9.x 正确的初始化方式
+                // klinecharts 10.0 初始化方式
                 chart = klinecharts.init('chart', {
-                    styles: {
-                        candle: {
-                            type: 'candle_solid',
-                            bar: {
-                                upColor: '#ef5350',      // 上涨红色
-                                downColor: '#26a69a',    // 下跌绿色
-                                noChangeColor: '#888888'
-                            },
-                            tooltip: {
-                                showRule: 'always',
-                                showType: 'standard',
-                                labels: ['时间: ', '开: ', '高: ', '低: ', '收: ', '涨跌幅: '],
-                                text: {
-                                    size: 12,
-                                    color: '#d9d9d9'
-                                }
-                            },
-                            priceMark: {
+                    layout: {
+                        background: {
+                            type: 'solid',
+                            color: '#0f0f23'
+                        },
+                        textColor: '#d9d9d9'
+                    },
+                    candle: {
+                        type: 'candle_solid',
+                        bar: {
+                            upColor: '#ef5350',      // 上涨红色（中国习惯）
+                            downColor: '#26a69a',    // 下跌绿色
+                            noChangeColor: '#888888'
+                        },
+                        tooltip: {
+                            showRule: 'always',
+                            showType: 'standard',
+                            labels: ['时间: ', '开: ', '高: ', '低: ', '收: ', '涨跌幅: '],
+                            text: {
+                                size: 12,
+                                color: '#d9d9d9'
+                            }
+                        },
+                        priceMark: {
+                            show: true,
+                            high: {
                                 show: true,
-                                high: {
+                                color: '#ef5350',
+                                textSize: 10
+                            },
+                            low: {
+                                show: true,
+                                color: '#26a69a',
+                                textSize: 10
+                            },
+                            last: {
+                                show: true,
+                                upColor: '#ef5350',
+                                downColor: '#26a69a',
+                                noChangeColor: '#888888',
+                                text: {
                                     show: true,
-                                    color: '#ef5350',
-                                    textSize: 10
-                                },
-                                low: {
-                                    show: true,
-                                    color: '#26a69a',
-                                    textSize: 10
-                                },
-                                last: {
-                                    show: true,
-                                    upColor: '#ef5350',
-                                    downColor: '#26a69a',
-                                    noChangeColor: '#888888',
-                                    text: {
-                                        show: true,
-                                        size: 12
-                                    }
+                                    size: 12
                                 }
                             }
                         }
@@ -295,7 +306,7 @@
                 chart.createIndicator('MACD', false, { height: 80 });
 
                 loadPeriodData('day');
-                console.log('✅ K线图表加载成功');
+                console.log('✅ K线图表加载成功 (klinecharts 10.0)');
             } catch (error) {
                 console.error('❌ K线图表加载失败:', error);
                 showError('图表加载失败: ' + error.message);
