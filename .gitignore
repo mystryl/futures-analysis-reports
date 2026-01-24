@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Output files
+output/*.html
+output/*.json
+output/*.txt
+
+# macOS
+.DS_Store
