@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 # 要回测的品种列表
 SYMBOLS = ['RB2605', 'HC2605', 'I2605', 'JM2605']
 DAYS = 30  # 获取天数
-OUTPUT_DIR = 'output'
+# 使用脚本所在目录作为输出目录
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output')
 
 def batch_analyze():
     """批量执行回测分析"""

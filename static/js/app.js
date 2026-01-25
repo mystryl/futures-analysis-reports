@@ -5,7 +5,7 @@ class ChartApp {
     constructor() {
         this.chart = null;
         this.datafeed = null;
-        this.currentSymbol = 'RB2505'; // 默认品种
+        this.currentSymbol = 'RB2605'; // 默认品种
         this.currentPeriod = '1d'; // 默认周期
     }
 
@@ -54,7 +54,13 @@ class ChartApp {
 
         // 检查 klinechartspro 是否可用
         if (typeof klinechartspro === 'undefined') {
-            throw new Error('klinechartspro 库未加载');
+            let errorMsg = 'klinechartspro 库未加载\n\n';
+            errorMsg += '请检查:\n';
+            errorMsg += '1. klinecharts 是否已加载: ' + (typeof klinecharts !== 'undefined' ? '是' : '否') + '\n';
+            errorMsg += '2. klinechartspro 是否已加载: 否\n';
+            errorMsg += '3. CDN 版本是否正确\n\n';
+            errorMsg += '如 CDN 加载失败，请确保 node_modules 中有对应文件。';
+            throw new Error(errorMsg);
         }
 
         // 创建图表配置
@@ -205,14 +211,35 @@ class ChartApp {
                 }
             },
             locale: 'zh-CN',
-            timeframe: '1D',
-            customApi: {
-                getDatafeed: () => this.datafeed
-            }
+            theme: 'dark',
+            // 品种信息 - 必需
+            symbol: {
+                ticker: this.currentSymbol,
+                name: this.currentSymbol,
+                exchange: 'SHFE',
+                market: 'futures'
+            },
+            // 周期配置 - 必需，格式为对象
+            period: {
+                multiplier: 1,
+                timespan: 'day',
+                text: '1d'
+            },
+            // 可选的周期列表
+            periods: [
+                { multiplier: 5, timespan: 'minute', text: '5m' },
+                { multiplier: 15, timespan: 'minute', text: '15m' },
+                { multiplier: 30, timespan: 'minute', text: '30m' },
+                { multiplier: 60, timespan: 'hour', text: '1h' },
+                { multiplier: 1, timespan: 'day', text: '1d' },
+                { multiplier: 1, timespan: 'week', text: '1w' }
+            ],
+            // 直接传递 datafeed，不包装
+            datafeed: this.datafeed
         };
 
         // 使用 klinechartspro 创建图表
-        this.chart = klinechartspro.KLineChartPro.init(config);
+        this.chart = new klinechartspro.KLineChartPro(config);
         console.log('图表实例已创建');
     }
 
@@ -225,10 +252,23 @@ class ChartApp {
             const to = Date.now();
             const from = to - (90 * 24 * 60 * 60 * 1000);
 
+            // 构建符号和周期对象
+            const symbolObj = {
+                ticker: this.currentSymbol,
+                name: this.currentSymbol,
+                exchange: 'SHFE',
+                market: 'futures'
+            };
+            const periodObj = {
+                multiplier: 1,
+                timespan: 'day',
+                text: '1d'
+            };
+
             // 获取历史数据
             const klineData = await this.datafeed.getHistoryKLineData(
-                this.currentSymbol,
-                this.currentPeriod,
+                symbolObj,
+                periodObj,
                 from,
                 to
             );

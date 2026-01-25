@@ -3,8 +3,12 @@ from flask import Blueprint, request, jsonify
 import akshare as ak
 from api.utils import handle_akshare_error
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+# 获取当前日期，格式为 YYYYMMDD
+CURRENT_DATE = datetime.now().strftime("%Y%m%d")
 
 symbols_bp = Blueprint('symbols', __name__)
 
@@ -65,7 +69,7 @@ def search_symbols():
 
         # 获取上海期货交易所的合约信息
         try:
-            df_shfe = ak.futures_contract_info_shfe(date="20240122")
+            df_shfe = ak.futures_contract_info_shfe(date=CURRENT_DATE)
             if not df_shfe.empty:
                 for _, row in df_shfe.iterrows():
                     contract = row.get('合约代码', '')
@@ -106,7 +110,7 @@ def search_symbols():
 
         # 获取郑州商品交易所的合约信息
         try:
-            df_czce = ak.futures_contract_info_czce(date="20240122")
+            df_czce = ak.futures_contract_info_czce(date=CURRENT_DATE)
             if not df_czce.empty:
                 for _, row in df_czce.iterrows():
                     product_code = row.get('产品代码', '')
@@ -128,7 +132,7 @@ def search_symbols():
 
         # 获取中国金融期货交易所的合约信息
         try:
-            df_cffex = ak.futures_contract_info_cffex(date="20240122")
+            df_cffex = ak.futures_contract_info_cffex(date=CURRENT_DATE)
             if not df_cffex.empty:
                 for _, row in df_cffex.iterrows():
                     variety = row.get('品种', '')
@@ -148,7 +152,7 @@ def search_symbols():
 
         # 获取上海国际能源交易中心的合约信息
         try:
-            df_ine = ak.futures_contract_info_ine(date="20240122")
+            df_ine = ak.futures_contract_info_ine(date=CURRENT_DATE)
             if not df_ine.empty:
                 for _, row in df_ine.iterrows():
                     contract = row.get('合约代码', '')

@@ -40,18 +40,22 @@ class AkshareDatafeed {
 
     /**
      * 获取历史 K 线数据
-     * @param {string} symbol - 品种代码 (如 "RB2505")
-     * @param {string} period - 周期 ("5m", "15m", "1h", "1d")
+     * @param {SymbolInfo} symbol - 品种信息对象 { ticker, exchange, ... }
+     * @param {Period} period - 周期对象 { multiplier, timespan, text }
      * @param {number} from - 开始时间戳 (毫秒)
      * @param {number} to - 结束时间戳 (毫秒)
      * @returns {Promise<Array>} K 线数据数组
      */
     async getHistoryKLineData(symbol, period, from, to) {
         try {
+            // 从对象中提取值
+            const symbolCode = symbol.ticker;  // 从对象获取 ticker
+            const periodCode = period.text;    // 使用 text 字段 (如 '1d')
+
             // 构建查询参数
             const params = new URLSearchParams({
-                symbol: symbol,
-                period: period
+                symbol: symbolCode,
+                period: periodCode
             });
 
             if (from) {
@@ -82,26 +86,28 @@ class AkshareDatafeed {
     /**
      * 订阅实时数据
      * 注意: 当前版本不实现实时订阅，仅作为接口占位
-     * @param {string} symbol - 品种代码
-     * @param {string} period - 周期
+     * @param {SymbolInfo} symbol - 品种信息对象
+     * @param {Period} period - 周期对象
      * @param {Function} callback - 数据回调函数
      * @returns {Promise<void>}
      */
     async subscribe(symbol, period, callback) {
-        // 暂不实现实时订阅
-        console.log(`订阅请求: ${symbol} (${period}) - 功能待实现`);
+        const symbolCode = symbol.ticker;
+        const periodCode = period.text;
+        console.log(`订阅请求: ${symbolCode} (${periodCode}) - 功能待实现`);
         return Promise.resolve();
     }
 
     /**
      * 取消订阅
-     * @param {string} symbol - 品种代码
-     * @param {string} period - 周期
+     * @param {SymbolInfo} symbol - 品种信息对象
+     * @param {Period} period - 周期对象
      * @returns {Promise<void>}
      */
     async unsubscribe(symbol, period) {
-        // 暂不实现实时订阅
-        console.log(`取消订阅: ${symbol} (${period})`);
+        const symbolCode = symbol.ticker;
+        const periodCode = period.text;
+        console.log(`取消订阅: ${symbolCode} (${periodCode})`);
         return Promise.resolve();
     }
 

@@ -11,6 +11,7 @@ import sys
 import logging
 from datetime import datetime
 from typing import Optional
+import pandas as pd
 
 # 添加当前目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -183,13 +184,19 @@ class FuturesAnalyzer:
 
             logger.info(f"  图表已保存: {chart_html_path}")
 
-        # 保存报告
-        report_path = None
+        # 保存报告（同时保存 TXT 和 HTML 格式）
+        report_txt_path = None
+        report_html_path = None
         if save_report:
-            report_path = os.path.join(self.output_dir, f"{symbol}_report.txt")
-            with open(report_path, 'w', encoding='utf-8') as f:
+            # 保存文本格式
+            report_txt_path = os.path.join(self.output_dir, f"{symbol}_report.txt")
+            with open(report_txt_path, 'w', encoding='utf-8') as f:
                 f.write(full_report)
-            logger.info(f"  报告已保存: {report_path}")
+            logger.info(f"  文本报告已保存: {report_txt_path}")
+
+            # 保存 HTML 格式
+            report_html_path = os.path.join(self.output_dir, f"{symbol}_report.html")
+            self.chart_generator.generate_html_report(symbol, full_report, report_html_path)
 
         # 计算耗时
         elapsed = (datetime.now() - start_time).total_seconds()
@@ -201,7 +208,8 @@ class FuturesAnalyzer:
             'data_summary': data_summary,
             'full_report': full_report,
             'chart_html_path': os.path.join(self.output_dir, f"{symbol}_chart.html") if save_chart else None,
-            'report_path': report_path,
+            'report_txt_path': report_txt_path,
+            'report_html_path': report_html_path,
             'elapsed_time': elapsed
         }
 
@@ -243,7 +251,7 @@ def main():
     parser.add_argument(
         'symbol',
         nargs='?',
-        default='rb888',
+        default='eg2605',
         help='期货品种代码 (默认: rb888 螺纹钢)'
     )
     parser.add_argument(
@@ -289,6 +297,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # 导入pandas
-    import pandas as pd
     sys.exit(main())

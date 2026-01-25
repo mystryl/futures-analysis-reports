@@ -9,9 +9,12 @@ dist/
 build/
 
 # Output files
-output/*.html
-output/*.json
-output/*.txt
+output/
+
+# Third-party libraries
+klinecharts.min.js
 
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride

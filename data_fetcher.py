@@ -33,7 +33,8 @@ class FuturesDataFetcher:
         symbol: str = "rb888",
         period: str = "day",
         days: int = 120,
-        adjust: Optional[str] = None
+        adjust: Optional[str] = None,
+        limit: Optional[int] = None
     ) -> pd.DataFrame:
         """
         获取期货历史数据
@@ -43,6 +44,7 @@ class FuturesDataFetcher:
             period: 周期，支持 day/60min/15min/5min
             days: 获取天数（用于日线，分钟线会自动计算条数）
             adjust: 复权类型
+            limit: 可选的数据条数限制，None 表示不限制（返回全部可用数据）
 
         Returns:
             标准化的 DataFrame，包含列: date, open, high, low, close, volume
@@ -57,13 +59,13 @@ class FuturesDataFetcher:
             logger.info(f"正在获取 {symbol} 期货数据，周期: {period}")
 
             if period == "day":
-                df = self._get_daily_data(sina_symbol, symbol, days)
+                df = self._get_daily_data(sina_symbol, symbol, days, limit)
             elif period in ["60min", "60m", "1h"]:
-                df = self._get_minute_data(sina_symbol, symbol, "60", days)
+                df = self._get_minute_data(sina_symbol, symbol, "60", days, limit)
             elif period in ["15min", "15m"]:
-                df = self._get_minute_data(sina_symbol, symbol, "15", days)
+                df = self._get_minute_data(sina_symbol, symbol, "15", days, limit)
             elif period in ["5min", "5m"]:
-                df = self._get_minute_data(sina_symbol, symbol, "5", days)
+                df = self._get_minute_data(sina_symbol, symbol, "5", days, limit)
             else:
                 raise ValueError(f"不支持的周期: {period}")
 
@@ -86,32 +88,56 @@ class FuturesDataFetcher:
             logger.error(f"获取 {symbol} 数据失败: {e}")
             raise
 
-    def _get_daily_data(self, sina_symbol: str, symbol: str, days: int) -> pd.DataFrame:
-        """获取日线数据"""
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days * 2)
+    def _get_daily_data(self, sina_symbol: str, symbol: str, days: int, limit: Optional[int] = None) -> pd.DataFrame:
+        """获取日线数据
 
+        Args:
+            sina_symbol: 新浪格式的期货代码
+            symbol: 原始期货代码
+            days: 天数（用于计算日期范围）
+            limit: 可选的数据条数限制，None 表示获取全部历史数据
+        """
+        end_date = datetime.now()
+
+        # 优先使用东方财富接口，支持获取全部历史数据
+        try:
+            em_symbol = self._convert_to_em_symbol(symbol)
+            # 使用更大的日期范围以获取更多历史数据
+            start_date = end_date - timedelta(days=365 * 30)  # 30年历史
+            df = self.akshare.futures_hist_em(
+                symbol=em_symbol,
+                period="daily",
+                start_date=start_date.strftime("%Y%m%d"),
+                end_date=end_date.strftime("%Y%m%d")
+            )
+            if df is not None and not df.empty:
+                if limit is not None:
+                    return df.tail(limit)
+                return df
+        except Exception as e:
+            logger.warning(f"东方财富接口失败: {e}，尝试新浪接口...")
+
+        # 备用：新浪接口（数据范围可能有限）
         df = self.akshare.futures_zh_daily_sina(symbol=sina_symbol)
 
         if df is None or df.empty:
-            # 尝试东方财富接口
-            logger.warning("新浪接口失败，尝试东方财富接口...")
-            try:
-                em_symbol = self._convert_to_em_symbol(symbol)
-                df = self.akshare.futures_hist_em(
-                    symbol=em_symbol,
-                    period="daily",
-                    start_date=start_date.strftime("%Y%m%d"),
-                    end_date=end_date.strftime("%Y%m%d")
-                )
-            except Exception as e:
-                logger.error(f"备用接口也失败: {e}")
-                return pd.DataFrame()
+            logger.error("所有接口均失败")
+            return pd.DataFrame()
 
+        if limit is not None:
+            return df.tail(limit)
         return df
 
-    def _get_minute_data(self, sina_symbol: str, symbol: str, period: str, days: int) -> pd.DataFrame:
-        """获取分钟线数据"""
+    def _get_minute_data(self, sina_symbol: str, symbol: str, period: str, days: int, limit: Optional[int] = None) -> pd.DataFrame:
+        """获取分钟线数据
+
+        Args:
+            sina_symbol: 新浪格式的期货代码
+            symbol: 原始期货代码
+            period: 分钟周期 ("5", "15", "60")
+            days: 天数（用于估算数据条数）
+            limit: 可选的数据条数限制，None 表示不限制（返回全部数据）
+        """
         try:
             df = self.akshare.futures_zh_minute_sina(symbol=sina_symbol, period=period)
 
@@ -119,21 +145,12 @@ class FuturesDataFetcher:
                 logger.error(f"获取 {period} 分钟数据失败")
                 return pd.DataFrame()
 
-            # 根据天数过滤数据
-            # 估算需要的数据条数
-            if period == "5":
-                # 每天5分钟约54条（日盘39条 + 夜盘15条）
-                limit = days * 54
-            elif period == "15":
-                # 每天15分钟约18条
-                limit = days * 18
-            elif period == "60":
-                # 每天60分钟约4-5条
-                limit = days * 5
-            else:
-                limit = days * 50
+            # 如果指定了 limit，则限制返回条数（使用用户指定的值）
+            if limit is not None:
+                return df.tail(limit)
 
-            return df.tail(limit)
+            # 默认返回全部数据
+            return df
 
         except Exception as e:
             logger.error(f"获取分钟数据失败: {e}")
@@ -266,7 +283,8 @@ class FuturesDataFetcher:
             '最低': 'low', 'Low': 'low', 'low': 'low',
             '收盘': 'close', 'Close': 'close', 'close': 'close',
             '成交量': 'volume', 'Volume': 'volume', 'volume': 'volume',
-            'vol': 'volume', '持仓量': 'volume',
+            'vol': 'volume',
+            '持仓量': 'open_interest', '持仓': 'open_interest', 'open_interest': 'open_interest',
             '成交额': 'amount', 'Amount': 'amount', 'amount': 'amount',
             'turnover': 'amount', '持仓额': 'amount',
         }
@@ -292,10 +310,17 @@ class FuturesDataFetcher:
         return df
 
 
-def fetch_future_data(symbol: str = "rb888", period: str = "day", days: int = 120) -> pd.DataFrame:
-    """快捷函数：获取期货数据"""
+def fetch_future_data(symbol: str = "rb888", period: str = "day", days: int = 120, limit: Optional[int] = None) -> pd.DataFrame:
+    """快捷函数：获取期货数据
+
+    Args:
+        symbol: 期货品种代码
+        period: 周期
+        days: 天数
+        limit: 可选的数据条数限制，None 表示获取全部数据
+    """
     fetcher = FuturesDataFetcher()
-    return fetcher.get_future_data(symbol=symbol, period=period, days=days)
+    return fetcher.get_future_data(symbol=symbol, period=period, days=days, limit=limit)
 
 
 if __name__ == "__main__":
