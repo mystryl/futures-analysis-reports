@@ -11,8 +11,9 @@ build/
 # Output files
 output/
 
+# klinecharts.min.js 需要包含在 public/ 中部署
 # Third-party libraries
-klinecharts.min.js
+# klinecharts.min.js
 
 # macOS
 .DS_Store
