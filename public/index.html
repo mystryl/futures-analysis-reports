@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期货回测报告汇总</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #eee;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-right: 16px;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .card-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .card-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            text-decoration: none;
+            color: #ccc;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .card-link:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+        }
+        .card-link .icon {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .status-success {
+            color: #4ade80;
+        }
+        .status-failed {
+            color: #ef4444;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: #666;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 期货回测报告汇总</h1>
+        <p class="subtitle">RB2605 · HC2605 · I2605 · JM2605</p>
+
+        <div class="grid">
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">RB</div>
+                    <div>
+                        <div class="card-title">螺纹钢 2605</div>
+                        <div class="status-success" style="font-size: 0.85rem; margin-top: 4px;">✓ 分析成功</div>
+                    </div>
+                </div>
+                <div class="card-links">
+
+                    <a href="rb2605_chart.html" class="card-link" target="_blank">
+                        <span class="icon">📈</span>
+                        <span>K线图表</span>
+                    </a>
+                    <a href="rb2605_report.html" class="card-link" target="_blank">
+                        <span class="icon">📄</span>
+                        <span>HTML报告</span>
+                    </a>
+                    <a href="rb2605_report.txt" class="card-link" target="_blank">
+                        <span class="icon">📝</span>
+                        <span>文本报告</span>
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">HC</div>
+                    <div>
+                        <div class="card-title">热卷 2605</div>
+                        <div class="status-success" style="font-size: 0.85rem; margin-top: 4px;">✓ 分析成功</div>
+                    </div>
+                </div>
+                <div class="card-links">
+
+                    <a href="hc2605_chart.html" class="card-link" target="_blank">
+                        <span class="icon">📈</span>
+                        <span>K线图表</span>
+                    </a>
+                    <a href="hc2605_report.html" class="card-link" target="_blank">
+                        <span class="icon">📄</span>
+                        <span>HTML报告</span>
+                    </a>
+                    <a href="hc2605_report.txt" class="card-link" target="_blank">
+                        <span class="icon">📝</span>
+                        <span>文本报告</span>
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">I2</div>
+                    <div>
+                        <div class="card-title">铁矿 2605</div>
+                        <div class="status-success" style="font-size: 0.85rem; margin-top: 4px;">✓ 分析成功</div>
+                    </div>
+                </div>
+                <div class="card-links">
+
+                    <a href="i2605_chart.html" class="card-link" target="_blank">
+                        <span class="icon">📈</span>
+                        <span>K线图表</span>
+                    </a>
+                    <a href="i2605_report.html" class="card-link" target="_blank">
+                        <span class="icon">📄</span>
+                        <span>HTML报告</span>
+                    </a>
+                    <a href="i2605_report.txt" class="card-link" target="_blank">
+                        <span class="icon">📝</span>
+                        <span>文本报告</span>
+                    </a>
+
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">JM</div>
+                    <div>
+                        <div class="card-title">焦煤 2605</div>
+                        <div class="status-success" style="font-size: 0.85rem; margin-top: 4px;">✓ 分析成功</div>
+                    </div>
+                </div>
+                <div class="card-links">
+
+                    <a href="jm2605_chart.html" class="card-link" target="_blank">
+                        <span class="icon">📈</span>
+                        <span>K线图表</span>
+                    </a>
+                    <a href="jm2605_report.html" class="card-link" target="_blank">
+                        <span class="icon">📄</span>
+                        <span>HTML报告</span>
+                    </a>
+                    <a href="jm2605_report.txt" class="card-link" target="_blank">
+                        <span class="icon">📝</span>
+                        <span>文本报告</span>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <p>生成时间: 2026-01-26 21:54:45</p>
+            <p style="margin-top: 8px;">期货回测系统 © 2026</p>
+        </div>
+    </div>
+</body>
+</html>
