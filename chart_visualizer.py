@@ -1230,7 +1230,7 @@ class ChartDataGenerator:
                     indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
                 }}
                 if (indicatorStates['BOLL']) {{
-                    indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+                    indicators['BOLL'] = chart.createIndicator('BOLL', true);
                 }}
 
                 // 加载初始数据
@@ -1334,7 +1334,7 @@ class ChartDataGenerator:
                 indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
             }}
             if (indicatorStates['BOLL']) {{
-                indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+                indicators['BOLL'] = chart.createIndicator('BOLL', true);
             }}
         }}
 
