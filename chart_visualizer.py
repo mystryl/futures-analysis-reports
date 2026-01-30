@@ -431,6 +431,9 @@ class ChartDataGenerator:
         # 准备报告HTML内容
         report_html = self._generate_report_html(report_data, symbol)
 
+        # 获取生成时间
+        generation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         # 使用 .format() 方法生成HTML
         html_template = '''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -497,6 +500,16 @@ class ChartDataGenerator:
 
         body.light-theme .header p {{
             color: #666;
+        }}
+
+        .header .generation-time {{
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }}
+
+        body.light-theme .header .generation-time {{
+            color: #888;
         }}
 
         /* 主题切换按钮 */
@@ -822,6 +835,7 @@ class ChartDataGenerator:
             <div class="header-left">
                 <h1>📈 {0} 多周期技术分析图表</h1>
                 <p>5分钟 · 15分钟 · 60分钟 · 日线 | 实时切换</p>
+                <p class="generation-time">生成时间: {6}</p>
             </div>
             <div class="theme-toggle">
                 <button class="theme-btn" id="theme-toggle-btn">🌙 暗色主题</button>
@@ -1431,7 +1445,8 @@ class ChartDataGenerator:
             periods_data.get('5min', '[]'),
             periods_data.get('15min', '[]'),
             periods_data.get('60min', '[]'),
-            periods_data.get('day', '[]')
+            periods_data.get('day', '[]'),
+            generation_time  # 新增：报告生成时间
         )
 
         with open(output_path, 'w', encoding='utf-8') as f:
