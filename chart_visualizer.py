@@ -866,6 +866,10 @@ class ChartDataGenerator:
                         <span class="checkbox"></span>
                         <span>KDJ</span>
                     </div>
+                    <div class="indicator-toggle" data-indicator="BOLL">
+                        <span class="checkbox"></span>
+                        <span>BOLL</span>
+                    </div>
                 </div>
 
                 <div class="info">
@@ -913,7 +917,8 @@ class ChartDataGenerator:
         let indicatorStates = {{
             'VOL': true,
             'MACD': true,
-            'KDJ': false
+            'KDJ': false,
+            'BOLL': false
         }};
 
         // 暗色主题样式配置 - 红涨绿跌（中国习惯）
@@ -1224,6 +1229,9 @@ class ChartDataGenerator:
                 if (indicatorStates['KDJ']) {{
                     indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
                 }}
+                if (indicatorStates['BOLL']) {{
+                    indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+                }}
 
                 // 加载初始数据
                 const data = periodData['day'];
@@ -1324,6 +1332,9 @@ class ChartDataGenerator:
             }}
             if (indicatorStates['KDJ']) {{
                 indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
+            }}
+            if (indicatorStates['BOLL']) {{
+                indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
             }}
         }}
 
