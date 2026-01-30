@@ -1216,10 +1216,15 @@ class ChartDataGenerator:
                     ]
                 }});
 
-                // 创建 MA 指标（在蜡烛图中显示）
-                chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+                // MA和BOLL互斥：默认显示MA，BOLL关闭时不创建，BOLL开启时隐藏MA
+                // 根据BOLL状态决定主图指标
+                if (indicatorStates['BOLL']) {{
+                    indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+                }} else {{
+                    indicators['MA'] = chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+                }}
 
-                // 根据默认状态创建指标
+                // 根据默认状态创建副图指标
                 if (indicatorStates['VOL']) {{
                     indicators['VOL'] = chart.createIndicator('VOL', false, {{ height: 80 }});
                 }}
@@ -1228,9 +1233,6 @@ class ChartDataGenerator:
                 }}
                 if (indicatorStates['KDJ']) {{
                     indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
-                }}
-                if (indicatorStates['BOLL']) {{
-                    indicators['BOLL'] = chart.createIndicator('BOLL', true);
                 }}
 
                 // 加载初始数据
@@ -1273,25 +1275,56 @@ class ChartDataGenerator:
 
             const btn = document.querySelector(`.indicator-toggle[data-indicator="${{indicatorName}}"]`);
 
-            if (indicatorStates[indicatorName]) {{
-                // 隐藏指标
-                if (indicators[indicatorName]) {{
-                    try {{
-                        chart.removeIndicator(indicators[indicatorName]);
-                    }} catch (e) {{
-                        console.warn('移除指标失败:', e);
+            // BOLL和MA互斥处理
+            if (indicatorName === 'BOLL') {{
+                if (indicatorStates['BOLL']) {{
+                    // 关闭BOLL，恢复MA
+                    if (indicators['BOLL']) {{
+                        try {{
+                            chart.removeIndicator(indicators['BOLL']);
+                        }} catch (e) {{
+                            console.warn('移除BOLL失败:', e);
+                        }}
+                        delete indicators['BOLL'];
                     }}
-                    delete indicators[indicatorName];
+                    indicatorStates['BOLL'] = false;
+                    // 恢复MA
+                    indicators['MA'] = chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+                }} else {{
+                    // 开启BOLL，移除MA
+                    if (indicators['MA']) {{
+                        try {{
+                            chart.removeIndicator(indicators['MA']);
+                        }} catch (e) {{
+                            console.warn('移除MA失败:', e);
+                        }}
+                        delete indicators['MA'];
+                    }}
+                    indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+                    indicatorStates['BOLL'] = true;
                 }}
-                indicatorStates[indicatorName] = false;
             }} else {{
-                // 显示指标 - 先检查是否已存在
-                if (indicators[indicatorName]) {{
-                    console.warn('指标已存在，跳过创建');
-                    return;
+                // 其他指标的正常切换逻辑
+                if (indicatorStates[indicatorName]) {{
+                    // 隐藏指标
+                    if (indicators[indicatorName]) {{
+                        try {{
+                            chart.removeIndicator(indicators[indicatorName]);
+                        }} catch (e) {{
+                            console.warn('移除指标失败:', e);
+                        }}
+                        delete indicators[indicatorName];
+                    }}
+                    indicatorStates[indicatorName] = false;
+                }} else {{
+                    // 显示指标 - 先检查是否已存在
+                    if (indicators[indicatorName]) {{
+                        console.warn('指标已存在，跳过创建');
+                        return;
+                    }}
+                    indicators[indicatorName] = chart.createIndicator(indicatorName, false, {{ height: 80 }});
+                    indicatorStates[indicatorName] = true;
                 }}
-                indicators[indicatorName] = chart.createIndicator(indicatorName, false, {{ height: 80 }});
-                indicatorStates[indicatorName] = true;
             }}
 
             // 更新按钮状态
@@ -1308,7 +1341,7 @@ class ChartDataGenerator:
         function restoreIndicators() {{
             if (!chart) return;
 
-            // 清除所有已跟踪的指标实例（不包括MA，它始终显示）
+            // 清除所有已跟踪的指标实例
             for (let key in indicators) {{
                 if (indicators[key]) {{
                     try {{
@@ -1320,10 +1353,14 @@ class ChartDataGenerator:
             }}
             indicators = {{}};
 
-            // MA指标始终显示，重新创建
-            chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+            // 根据BOLL状态决定主图指标（BOLL和MA互斥）
+            if (indicatorStates['BOLL']) {{
+                indicators['BOLL'] = chart.createIndicator('BOLL', true, {{ id: 'candle_pane' }});
+            }} else {{
+                indicators['MA'] = chart.createIndicator('MA', true, {{ id: 'candle_pane' }});
+            }}
 
-            // 根据当前状态重新创建指标
+            // 根据当前状态重新创建副图指标
             if (indicatorStates['VOL']) {{
                 indicators['VOL'] = chart.createIndicator('VOL', false, {{ height: 80 }});
             }}
@@ -1332,9 +1369,6 @@ class ChartDataGenerator:
             }}
             if (indicatorStates['KDJ']) {{
                 indicators['KDJ'] = chart.createIndicator('KDJ', false, {{ height: 80 }});
-            }}
-            if (indicatorStates['BOLL']) {{
-                indicators['BOLL'] = chart.createIndicator('BOLL', true);
             }}
         }}
 
